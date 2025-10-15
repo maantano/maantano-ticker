@@ -55,10 +55,14 @@ body {
 .stock-list {
   max-height: 195px;
   min-height: 60px;
-  overflow-y: auto;
+  overflow-y: hidden;
   overflow-x: hidden;
   padding: 8px 0;
   flex-shrink: 0;
+}
+
+.stock-list.has-scroll {
+  overflow-y: auto;
 }
 
 .stock-list::-webkit-scrollbar {

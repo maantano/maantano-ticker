@@ -177,6 +177,20 @@ class MaanStockApp {
 
     this.stockListEl.innerHTML = "";
 
+    // 환영 메시지에서 적용한 스타일 초기화
+    this.stockListEl.style.maxHeight = "";
+    this.stockListEl.style.minHeight = "";
+    this.stockListEl.style.display = "";
+    this.stockListEl.style.alignItems = "";
+    this.stockListEl.style.justifyContent = "";
+
+    // 3개 이상일 때만 스크롤 활성화
+    if (this.stocks.length >= 3) {
+      this.stockListEl.classList.add("has-scroll");
+    } else {
+      this.stockListEl.classList.remove("has-scroll");
+    }
+
     this.stocks.forEach((stock, index) => {
       const stockItemEl = this.createStockItem(stock, index);
       this.stockListEl.appendChild(stockItemEl);
@@ -274,6 +288,14 @@ class MaanStockApp {
 
   showEmptyState() {
     this.stockListEl.innerHTML = "";
+    this.stockListEl.classList.remove("has-scroll");
+
+    // 환영 메시지에서 적용한 스타일 초기화
+    this.stockListEl.style.maxHeight = "";
+    this.stockListEl.style.minHeight = "";
+    this.stockListEl.style.display = "";
+    this.stockListEl.style.alignItems = "";
+    this.stockListEl.style.justifyContent = "";
 
     const emptyState = document.createElement("div");
     emptyState.className = "empty-state";
@@ -298,11 +320,18 @@ class MaanStockApp {
     this.addButtonEl.parentElement.style.display = "none"; // add-stock-section
     document.querySelector(".footer").style.display = "none";
 
-    // 환영 메시지만 표시
+    // 환영 메시지를 전체 창 크기로 표시
     this.stockListEl.innerHTML = "";
+    this.stockListEl.classList.remove("has-scroll");
+    this.stockListEl.style.maxHeight = "none";
+    this.stockListEl.style.minHeight = "360px";
+    this.stockListEl.style.display = "flex";
+    this.stockListEl.style.alignItems = "center";
+    this.stockListEl.style.justifyContent = "center";
 
     const welcomeState = document.createElement("div");
     welcomeState.className = "empty-state";
+    welcomeState.style.padding = "60px 20px";
 
     const icon = document.createElement("img");
     icon.className = "empty-state-icon";
@@ -311,14 +340,20 @@ class MaanStockApp {
 
     const text = document.createElement("div");
     text.className = "empty-state-text";
-    text.innerHTML = "환영합니다!";
+    text.innerHTML = "Maantano Ticker가<br>설치되었습니다!";
 
     const button = document.createElement("button");
     button.className = "add-button";
     button.style.marginTop = "20px";
-    button.textContent = "시작하기";
+    button.textContent = "확인";
     button.addEventListener("click", () => {
-      // 시작하기 버튼 클릭 시 모든 UI 요소 다시 표시
+      // 확인 버튼 클릭 시 스타일 초기화 및 UI 요소 복원
+      this.stockListEl.style.maxHeight = "";
+      this.stockListEl.style.minHeight = "";
+      this.stockListEl.style.display = "";
+      this.stockListEl.style.alignItems = "";
+      this.stockListEl.style.justifyContent = "";
+
       this.addButtonEl.parentElement.style.display = "";
       document.querySelector(".footer").style.display = "";
       this.showEmptyState();
@@ -345,6 +380,13 @@ class MaanStockApp {
     const isHidden = this.searchSectionEl.classList.contains("hidden");
 
     if (isHidden) {
+      // 환영 메시지 스타일 초기화 (검색창을 열 때)
+      this.stockListEl.style.maxHeight = "";
+      this.stockListEl.style.minHeight = "";
+      this.stockListEl.style.display = "";
+      this.stockListEl.style.alignItems = "";
+      this.stockListEl.style.justifyContent = "";
+
       this.searchSectionEl.classList.remove("hidden");
       this.searchInputEl.focus();
     } else {

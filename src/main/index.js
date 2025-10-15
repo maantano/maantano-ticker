@@ -33,7 +33,7 @@ function getResourcePath(relativePath) {
 function createWindow() {
   window = new BrowserWindow({
     width: 360,
-    height: 500,
+    height: 360,
     show: false,
     frame: false,
     resizable: false,
@@ -87,14 +87,13 @@ function showWindow() {
 }
 
 function showWelcomeWindow() {
-  // 화면 중앙에 창 표시
-  const { screen } = require("electron");
-  const primaryDisplay = screen.getPrimaryDisplay();
-  const { width, height } = primaryDisplay.workAreaSize;
-
+  // tray 위치에 창 표시
+  const trayBounds = tray.getBounds();
   const windowBounds = window.getBounds();
-  const x = Math.round((width - windowBounds.width) / 2);
-  const y = Math.round((height - windowBounds.height) / 2);
+  const x = Math.round(
+    trayBounds.x + trayBounds.width / 2 - windowBounds.width / 2
+  );
+  const y = Math.round(trayBounds.y + trayBounds.height);
 
   window.setPosition(x, y, false);
   window.show();
@@ -126,6 +125,14 @@ app.whenReady().then(async () => {
   if (dbExists) {
     window.webContents.on("did-finish-load", () => {
       window.webContents.send("db-update-status", { loading: false, success: true });
+
+      // 첫 실행이면 환영 창을 화면 중앙에 표시
+      if (isFirstLaunch) {
+        store.set("firstLaunch", Date.now());
+        setTimeout(() => {
+          showWelcomeWindow();
+        }, 2000);
+      }
     });
 
     // 업데이트가 필요하면 백그라운드에서 조용히 업데이트
@@ -151,20 +158,18 @@ app.whenReady().then(async () => {
       await dbUpdater.updateDatabase();
       store.set("lastDBUpdate", Date.now());
       window.webContents.send("db-update-status", { loading: false, success: true });
+
+      // 첫 설치 시 환영 창 표시
+      if (isFirstLaunch) {
+        store.set("firstLaunch", Date.now());
+        setTimeout(() => {
+          showWelcomeWindow();
+        }, 2000);
+      }
     } catch (error) {
       console.error("[Maantano Ticker] DB 업데이트 실패:", error.message);
       window.webContents.send("db-update-status", { loading: false, success: false, error: error.message });
     }
-  }
-
-  // 첫 실행이면 환영 창을 화면 중앙에 표시
-  if (isFirstLaunch) {
-    store.set("firstLaunch", Date.now());
-
-    // DB 업데이트 완료 후 환영 창 표시 (2초 대기)
-    setTimeout(() => {
-      showWelcomeWindow();
-    }, 2000);
   }
 });
 
@@ -272,6 +277,12 @@ ipcMain.on("update-tray", (_, data) => {
 
 ipcMain.on("quit-app", () => {
   app.quit();
+});
+
+ipcMain.on("hide-window", () => {
+  if (window) {
+    window.hide();
+  }
 });
 
 ipcMain.handle("store-get", (_, key) => {
