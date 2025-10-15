@@ -56,7 +56,7 @@
           ]
         }
       ],
-      "icon": "assets/icon.icns",
+      "icon": "src/assets/icon.icns",
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
       "entitlements": "build/entitlements.mac.plist",
@@ -82,7 +82,7 @@
       "package.json"
     ],
     "directories": {
-      "buildResources": "assets",
+      "buildResources": "build",
       "output": "dist"
     }
   }

@@ -25,6 +25,11 @@ if (process.platform === "darwin") {
   app.dock.hide();
 }
 
+// 리소스 경로 헬퍼 함수 (assets가 src 안에 있음)
+function getResourcePath(relativePath) {
+  return path.join(__dirname, "../assets", relativePath);
+}
+
 function createWindow() {
   window = new BrowserWindow({
     width: 360,
@@ -50,7 +55,7 @@ function createWindow() {
 }
 
 function createTray() {
-  const iconPath = path.join(__dirname, "../../assets/chartIcon.png");
+  const iconPath = getResourcePath("chartIcon.png");
   let icon = nativeImage.createFromPath(iconPath);
   icon = icon.resize({ width: 18, height: 18 });
   icon.setTemplateImage(true);
@@ -215,20 +220,22 @@ function createTrayImage(text) {
   return image;
 }
 
-ipcMain.on("update-tray-title", (_, title) => {
-  if (tray) {
-    if (title === "📈") {
-      tray.setTitle("");
-      const iconPath = path.join(__dirname, "../../assets/chartIcon.png");
-      let icon = nativeImage.createFromPath(iconPath);
-      icon = icon.resize({ width: 18, height: 18 });
-      icon.setTemplateImage(true);
-      tray.setImage(icon);
-    } else {
-      const image = createTrayImage(title);
-      tray.setTitle("");
-      tray.setImage(image);
-    }
+ipcMain.on("update-tray", (_, data) => {
+  if (!tray) return;
+
+  if (data.type === "empty") {
+    // 종목이 없을 때: 기본 아이콘 표시
+    tray.setTitle("");
+    const iconPath = getResourcePath("chartIcon.png");
+    let icon = nativeImage.createFromPath(iconPath);
+    icon = icon.resize({ width: 18, height: 18 });
+    icon.setTemplateImage(true);
+    tray.setImage(icon);
+  } else if (data.type === "stock" && data.title) {
+    // 종목이 있을 때: 주식 정보 표시
+    const image = createTrayImage(data.title);
+    tray.setTitle("");
+    tray.setImage(image);
   }
 });
 
@@ -246,7 +253,7 @@ ipcMain.handle("store-set", (_, key, value) => {
 });
 
 ipcMain.handle("show-already-added-dialog", async () => {
-  const iconPath = path.join(__dirname, "../../assets/return.png");
+  const iconPath = getResourcePath("return.png");
   const icon = nativeImage.createFromPath(iconPath);
 
   await dialog.showMessageBox(window, {
@@ -259,7 +266,7 @@ ipcMain.handle("show-already-added-dialog", async () => {
 });
 
 ipcMain.handle("show-delisted-stocks-dialog", async (_, delistedStocks) => {
-  const iconPath = path.join(__dirname, "../../assets/return.png");
+  const iconPath = getResourcePath("return.png");
   const icon = nativeImage.createFromPath(iconPath);
 
   const stockNames = delistedStocks.map(s => `${s.name} (${s.symbol})`).join("\n");

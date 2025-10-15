@@ -275,7 +275,7 @@ class MaanStockApp {
 
     const icon = document.createElement("img");
     icon.className = "empty-state-icon";
-    icon.src = "../../assets/chartColor.png";
+    icon.src = "../assets/chartColor.png";
     icon.alt = "차트 아이콘";
 
     const text = document.createElement("div");
@@ -290,13 +290,13 @@ class MaanStockApp {
 
   updateMenuBar() {
     if (this.stocks.length === 0) {
-      ipcRenderer.send("update-tray-title", "📈");
+      ipcRenderer.send("update-tray", { type: "empty" });
       return;
     }
 
     const firstStock = this.stocks[0];
     const title = firstStock.getMenuBarText();
-    ipcRenderer.send("update-tray-title", title);
+    ipcRenderer.send("update-tray", { type: "stock", title });
   }
 
   toggleSearchSection() {
