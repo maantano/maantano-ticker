@@ -86,6 +86,23 @@ function showWindow() {
   window.focus();
 }
 
+function showWelcomeMessage() {
+  const iconPath = getResourcePath("chartColor.png");
+  const icon = nativeImage.createFromPath(iconPath);
+
+  dialog.showMessageBox(window, {
+    type: "info",
+    title: "Maantano Ticker 설치 완료!",
+    message: "환영합니다!",
+    detail: "메뉴바 상단 우측을 확인해보세요.\n차트 아이콘을 클릭하면 앱이 열립니다.\n\n종목을 추가하고 실시간 주가를 확인해보세요.",
+    buttons: ["시작하기"],
+    icon: icon
+  }).then(() => {
+    // 환영 메시지 닫은 후 창 표시
+    showWindow();
+  });
+}
+
 app.whenReady().then(async () => {
   // 먼저 UI를 표시
   createTray();
@@ -94,6 +111,9 @@ app.whenReady().then(async () => {
   if (process.argv.includes("--dev")) {
     window.webContents.openDevTools({ mode: "detach" });
   }
+
+  // 첫 실행 여부 확인
+  const isFirstLaunch = !store.has("firstLaunch");
 
   // DB 파일 존재 여부 확인
   const dbPath = path.join(__dirname, "../data/stocks-db.json");
@@ -134,6 +154,16 @@ app.whenReady().then(async () => {
       console.error("[Maantano Ticker] DB 업데이트 실패:", error.message);
       window.webContents.send("db-update-status", { loading: false, success: false, error: error.message });
     }
+  }
+
+  // 첫 실행이면 환영 메시지 표시
+  if (isFirstLaunch) {
+    store.set("firstLaunch", Date.now());
+
+    // DB 업데이트 완료 후 환영 메시지 표시 (2초 대기)
+    setTimeout(() => {
+      showWelcomeMessage();
+    }, 2000);
   }
 });
 
