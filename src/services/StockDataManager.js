@@ -44,6 +44,15 @@ class StockDataManager {
   createStock(symbol, name, market = 'korea') {
     return new Stock(symbol, name, market);
   }
+
+  /**
+   * 종목이 DB에 존재하는지 확인 (상장폐지 체크)
+   * @param {string} symbol - 종목 코드
+   * @returns {boolean} - DB에 존재하면 true
+   */
+  isStockInDatabase(symbol) {
+    return this.naverService.stocksDB.some(stock => stock.code === symbol);
+  }
 }
 
 module.exports = StockDataManager;

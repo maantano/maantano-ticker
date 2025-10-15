@@ -10,6 +10,7 @@ if (typeof global.File === "undefined") {
 
 const { app, BrowserWindow, Tray, nativeImage, ipcMain, dialog } = require("electron");
 const path = require("path");
+const fs = require("fs");
 const Store = require("electron-store");
 const StockDBUpdater = require("../services/StockDBUpdater");
 const { createCanvas } = require("canvas");
@@ -89,11 +90,33 @@ app.whenReady().then(async () => {
     window.webContents.openDevTools({ mode: "detach" });
   }
 
-  // DB 업데이트를 백그라운드에서 실행
+  // DB 파일 존재 여부 확인
+  const dbPath = path.join(__dirname, "../data/stocks-db.json");
+  const dbExists = fs.existsSync(dbPath);
   const lastDBUpdate = store.get("lastDBUpdate");
+  const needsUpdate = StockDBUpdater.needsUpdate(lastDBUpdate);
 
-  if (StockDBUpdater.needsUpdate(lastDBUpdate)) {
-    // 로딩 상태를 renderer에 전달
+  // DB가 있으면 로딩 화면 없이 시작 (즉시 사용 가능)
+  if (dbExists) {
+    window.webContents.on("did-finish-load", () => {
+      window.webContents.send("db-update-status", { loading: false, success: true });
+    });
+
+    // 업데이트가 필요하면 백그라운드에서 조용히 업데이트
+    if (needsUpdate) {
+      console.log("[Maantano Ticker] 백그라운드에서 DB 업데이트 중...");
+      setTimeout(async () => {
+        try {
+          await dbUpdater.updateDatabase();
+          store.set("lastDBUpdate", Date.now());
+          console.log("[Maantano Ticker] DB 업데이트 완료");
+        } catch (error) {
+          console.error("[Maantano Ticker] DB 업데이트 실패:", error.message);
+        }
+      }, 3000); // 3초 후 백그라운드에서 업데이트
+    }
+  } else {
+    // DB가 없으면 로딩 화면 표시 (첫 설치 시)
     window.webContents.on("did-finish-load", () => {
       window.webContents.send("db-update-status", { loading: true });
     });
@@ -101,18 +124,11 @@ app.whenReady().then(async () => {
     try {
       await dbUpdater.updateDatabase();
       store.set("lastDBUpdate", Date.now());
-      // 업데이트 완료를 renderer에 전달
       window.webContents.send("db-update-status", { loading: false, success: true });
     } catch (error) {
       console.error("[Maantano Ticker] DB 업데이트 실패:", error.message);
-      // 업데이트 실패를 renderer에 전달
       window.webContents.send("db-update-status", { loading: false, success: false, error: error.message });
     }
-  } else {
-    // DB가 최신 상태인 경우
-    window.webContents.on("did-finish-load", () => {
-      window.webContents.send("db-update-status", { loading: false, success: true });
-    });
   }
 });
 
@@ -238,6 +254,22 @@ ipcMain.handle("show-already-added-dialog", async () => {
     title: "알림",
     message: "이미 추가된 종목입니다.",
     buttons: ["OK"],
+    icon: icon
+  });
+});
+
+ipcMain.handle("show-delisted-stocks-dialog", async (_, delistedStocks) => {
+  const iconPath = path.join(__dirname, "../../assets/return.png");
+  const icon = nativeImage.createFromPath(iconPath);
+
+  const stockNames = delistedStocks.map(s => `${s.name} (${s.symbol})`).join("\n");
+  const message = `다음 종목이 상장폐지 또는 조회 불가능하여 자동으로 제거되었습니다:\n\n${stockNames}`;
+
+  await dialog.showMessageBox(window, {
+    type: "warning",
+    title: "상장폐지 종목 자동 제거",
+    message: message,
+    buttons: ["확인"],
     icon: icon
   });
 });

@@ -8,6 +8,7 @@ class Stock {
     this.changePrice = null;
     this.lastUpdated = null;
     this.error = null;
+    this.consecutiveErrors = 0; // 연속 에러 횟수 추적
   }
 
   updatePrice(priceData) {
@@ -18,11 +19,18 @@ class Stock {
     this.changePrice = priceData.changePrice;
     this.lastUpdated = new Date();
     this.error = null;
+    this.consecutiveErrors = 0; // 성공 시 에러 카운터 초기화
   }
 
   setError(errorMessage) {
     this.error = errorMessage;
+    this.consecutiveErrors++; // 에러 발생 시 카운터 증가
     this.lastUpdated = new Date();
+  }
+
+  // 상장폐지 가능성 판단 (연속 3회 이상 에러)
+  isPossiblyDelisted() {
+    return this.consecutiveErrors >= 3;
   }
 
   getChangeStatus() {
@@ -119,7 +127,8 @@ class Stock {
       changePercent: this.changePercent,
       changePrice: this.changePrice,
       lastUpdated: this.lastUpdated,
-      error: this.error
+      error: this.error,
+      consecutiveErrors: this.consecutiveErrors
     };
   }
 
@@ -130,6 +139,7 @@ class Stock {
     stock.changePrice = json.changePrice;
     stock.lastUpdated = json.lastUpdated ? new Date(json.lastUpdated) : null;
     stock.error = json.error;
+    stock.consecutiveErrors = json.consecutiveErrors || 0;
     return stock;
   }
 }

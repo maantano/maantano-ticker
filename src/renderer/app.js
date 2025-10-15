@@ -104,10 +104,46 @@ class MaanStockApp {
 
     try {
       await this.dataManager.updateMultipleStocks(this.stocks);
+
+      // 상장폐지 종목 자동 제거
+      await this.checkAndRemoveDelistedStocks();
+
       this.renderStockList();
       this.updateMenuBar();
     } catch (error) {
       console.error("Failed to update stocks:", error);
+    }
+  }
+
+  /**
+   * 상장폐지 가능성이 있는 종목 자동 제거
+   */
+  async checkAndRemoveDelistedStocks() {
+    const delistedStocks = [];
+
+    // 연속 에러 발생 종목 중 DB에 없는 종목 찾기
+    for (let i = this.stocks.length - 1; i >= 0; i--) {
+      const stock = this.stocks[i];
+
+      if (stock.isPossiblyDelisted()) {
+        // DB에 종목이 없으면 상장폐지로 판단
+        const existsInDB = this.dataManager.isStockInDatabase(stock.symbol);
+
+        if (!existsInDB) {
+          delistedStocks.push({
+            name: stock.name,
+            symbol: stock.symbol
+          });
+          this.stocks.splice(i, 1);
+        }
+      }
+    }
+
+    // 제거된 종목이 있으면 저장 및 알림
+    if (delistedStocks.length > 0) {
+      await this.saveStocks();
+      await ipcRenderer.invoke("show-delisted-stocks-dialog", delistedStocks);
+      console.log("[Maantano Ticker] 상장폐지 종목 자동 제거:", delistedStocks);
     }
   }
 
