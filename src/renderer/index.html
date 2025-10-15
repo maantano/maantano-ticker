@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Maantano Ticker</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+          <div class="spinner"></div>
+          <div class="loading-text">종목 데이터 업데이트 중...</div>
+          <div class="loading-subtext">잠시만 기다려주세요</div>
+        </div>
+      </div>
+
+      <div class="stock-list" id="stockList">
+        <div class="stock-item loading">
+          <span class="stock-name">종목을 추가해주세요</span>
+        </div>
+      </div>
+
+      <div class="add-stock-section">
+        <button class="add-button" id="addButton">+ 종목 추가</button>
+      </div>
+
+      <div class="search-section hidden" id="searchSection">
+        <input
+          type="text"
+          class="search-input"
+          id="searchInput"
+          placeholder="종목명 또는 종목코드 입력 (예: 삼성전자, 005930)"
+          autocomplete="off"
+        />
+        <div class="autocomplete-list" id="autocompleteList"></div>
+      </div>
+
+      <div class="footer">
+        <button class="footer-button" id="refreshButton">새로고침</button>
+        <button class="footer-button" id="quitButton">종료</button>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

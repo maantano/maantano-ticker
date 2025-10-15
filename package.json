@@ -1,0 +1,89 @@
+{
+  "name": "maantano-ticker",
+  "version": "1.0.0",
+  "description": "한국 주식 실시간 시세 조회 - macOS 메뉴바 앱",
+  "main": "src/main/index.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder",
+    "build:mac": "electron-builder --mac"
+  },
+  "keywords": [
+    "electron",
+    "stock",
+    "ticker",
+    "menubar",
+    "macos",
+    "korean-stock",
+    "finance"
+  ],
+  "author": {
+    "name": "Maantano Ticker",
+    "email": "contact@maantano-ticker.com"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "dependencies": {
+    "axios": "^1.6.2",
+    "canvas": "^3.2.0",
+    "cheerio": "^1.0.0-rc.12",
+    "electron-store": "^8.1.0",
+    "iconv-lite": "^0.7.0"
+  },
+  "build": {
+    "appId": "com.maantano-ticker.app",
+    "productName": "Maantano Ticker",
+    "copyright": "Copyright © 2024 Maantano Ticker",
+    "mac": {
+      "category": "public.app-category.finance",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.icns",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ],
+      "title": "Maantano Ticker ${version}"
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "buildResources": "assets",
+      "output": "dist"
+    }
+  }
+}
