@@ -65,6 +65,11 @@ class MaanStockApp {
         }
       }
     });
+
+    // 환영 메시지 리스너
+    ipcRenderer.on("show-welcome-message", () => {
+      this.showWelcomeMessage();
+    });
   }
 
   showLoadingOverlay() {
@@ -286,6 +291,43 @@ class MaanStockApp {
     emptyState.appendChild(icon);
     emptyState.appendChild(text);
     this.stockListEl.appendChild(emptyState);
+  }
+
+  showWelcomeMessage() {
+    // 모든 UI 요소 숨기기
+    this.addButtonEl.parentElement.style.display = "none"; // add-stock-section
+    document.querySelector(".footer").style.display = "none";
+
+    // 환영 메시지만 표시
+    this.stockListEl.innerHTML = "";
+
+    const welcomeState = document.createElement("div");
+    welcomeState.className = "empty-state";
+
+    const icon = document.createElement("img");
+    icon.className = "empty-state-icon";
+    icon.src = "../assets/chartColor.png";
+    icon.alt = "차트 아이콘";
+
+    const text = document.createElement("div");
+    text.className = "empty-state-text";
+    text.innerHTML = "환영합니다!";
+
+    const button = document.createElement("button");
+    button.className = "add-button";
+    button.style.marginTop = "20px";
+    button.textContent = "시작하기";
+    button.addEventListener("click", () => {
+      // 시작하기 버튼 클릭 시 모든 UI 요소 다시 표시
+      this.addButtonEl.parentElement.style.display = "";
+      document.querySelector(".footer").style.display = "";
+      this.showEmptyState();
+    });
+
+    welcomeState.appendChild(icon);
+    welcomeState.appendChild(text);
+    welcomeState.appendChild(button);
+    this.stockListEl.appendChild(welcomeState);
   }
 
   updateMenuBar() {

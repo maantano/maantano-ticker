@@ -86,21 +86,22 @@ function showWindow() {
   window.focus();
 }
 
-function showWelcomeMessage() {
-  const iconPath = getResourcePath("chartColor.png");
-  const icon = nativeImage.createFromPath(iconPath);
+function showWelcomeWindow() {
+  // 화면 중앙에 창 표시
+  const { screen } = require("electron");
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width, height } = primaryDisplay.workAreaSize;
 
-  dialog.showMessageBox(window, {
-    type: "info",
-    title: "Maantano Ticker 설치 완료!",
-    message: "환영합니다!",
-    detail: "메뉴바 상단 우측을 확인해보세요.\n차트 아이콘을 클릭하면 앱이 열립니다.\n\n종목을 추가하고 실시간 주가를 확인해보세요.",
-    buttons: ["시작하기"],
-    icon: icon
-  }).then(() => {
-    // 환영 메시지 닫은 후 창 표시
-    showWindow();
-  });
+  const windowBounds = window.getBounds();
+  const x = Math.round((width - windowBounds.width) / 2);
+  const y = Math.round((height - windowBounds.height) / 2);
+
+  window.setPosition(x, y, false);
+  window.show();
+  window.focus();
+
+  // 환영 메시지 전송
+  window.webContents.send("show-welcome-message");
 }
 
 app.whenReady().then(async () => {
@@ -156,13 +157,13 @@ app.whenReady().then(async () => {
     }
   }
 
-  // 첫 실행이면 환영 메시지 표시
+  // 첫 실행이면 환영 창을 화면 중앙에 표시
   if (isFirstLaunch) {
     store.set("firstLaunch", Date.now());
 
-    // DB 업데이트 완료 후 환영 메시지 표시 (2초 대기)
+    // DB 업데이트 완료 후 환영 창 표시 (2초 대기)
     setTimeout(() => {
-      showWelcomeMessage();
+      showWelcomeWindow();
     }, 2000);
   }
 });
