@@ -9,6 +9,7 @@ class MaanStockApp {
     this.updateInterval = null;
     this.searchTimeout = null;
 
+    this.containerEl = document.querySelector(".container");
     this.stockListEl = document.getElementById("stockList");
     this.addButtonEl = document.getElementById("addButton");
     this.searchSectionEl = document.getElementById("searchSection");
@@ -32,6 +33,18 @@ class MaanStockApp {
       this.showEmptyState();
       this.updateMenuBar();
     }
+
+    // 초기 로드 완료 후 창 크기 조정
+    this.adjustWindowSize();
+  }
+
+  adjustWindowSize() {
+    requestAnimationFrame(() => {
+      const containerHeight = this.containerEl.offsetHeight;
+      if (containerHeight > 0) {
+        ipcRenderer.send("resize-window", containerHeight);
+      }
+    });
   }
 
   setupEventListeners() {
@@ -387,13 +400,58 @@ class MaanStockApp {
       this.stockListEl.style.alignItems = "";
       this.stockListEl.style.justifyContent = "";
 
+      // 검색창 열 때도 리렌더링하여 stock-list 높이 조정
+      if (this.stocks.length > 0) {
+        this.renderStockList();
+      }
+
+      // Container에 searching 클래스 추가
+      this.containerEl.classList.add("searching");
       this.searchSectionEl.classList.remove("hidden");
-      this.searchInputEl.focus();
+
+      // 다음 프레임에서 높이 계산 및 창 크기 조정
+      requestAnimationFrame(() => {
+        this.adjustSearchWindowSize();
+
+        // 창 크기 조정 후 포커스
+        setTimeout(() => {
+          this.searchInputEl.focus();
+        }, 50);
+      });
     } else {
+      // Container에서 searching 클래스 제거
+      this.containerEl.classList.remove("searching");
       this.searchSectionEl.classList.add("hidden");
       this.searchInputEl.value = "";
       this.autocompleteListEl.innerHTML = "";
+
+      // stock-list 높이를 정상으로 되돌리기 위해 다시 렌더링
+      if (this.stocks.length > 0) {
+        this.renderStockList();
+      } else {
+        this.showEmptyState();
+      }
+
+      // 다음 프레임에서 높이 계산 및 창 크기 복원
+      requestAnimationFrame(() => {
+        const containerHeight = this.containerEl.offsetHeight;
+        ipcRenderer.send("resize-window", containerHeight);
+      });
     }
+  }
+
+  adjustSearchWindowSize() {
+    const containerHeight = this.containerEl.offsetHeight;
+    const autocompleteHeight = this.autocompleteListEl.offsetHeight;
+
+    // autocomplete가 비어있으면 (:empty로 display:none) offsetHeight는 0
+    // 비어있을 때는 container 높이만 사용
+    // 있을 때는 실제 autocomplete 높이 + 여유 공간 10px 추가
+    const totalHeight = autocompleteHeight > 0
+      ? containerHeight + autocompleteHeight + 10
+      : containerHeight;
+
+    ipcRenderer.send("resize-window", totalHeight);
   }
 
   handleSearchInput(query) {
@@ -403,6 +461,10 @@ class MaanStockApp {
 
     if (query.trim().length === 0) {
       this.autocompleteListEl.innerHTML = "";
+      // 검색어가 비어있으면 autocomplete 없이 창 크기 조정
+      requestAnimationFrame(() => {
+        this.adjustSearchWindowSize();
+      });
       return;
     }
 
@@ -430,6 +492,11 @@ class MaanStockApp {
       noResults.style.color = "var(--text-secondary)";
       noResults.textContent = "검색 결과가 없습니다.";
       this.autocompleteListEl.appendChild(noResults);
+
+      // 검색 결과 렌더링 후 창 크기 동적 조정
+      requestAnimationFrame(() => {
+        this.adjustSearchWindowSize();
+      });
       return;
     }
 
@@ -454,6 +521,11 @@ class MaanStockApp {
 
       this.autocompleteListEl.appendChild(item);
     });
+
+    // 검색 결과 렌더링 후 창 크기 동적 조정
+    requestAnimationFrame(() => {
+      this.adjustSearchWindowSize();
+    });
   }
 
   async addStock(symbol, name, market) {
@@ -471,6 +543,9 @@ class MaanStockApp {
 
     await this.saveStocks();
     await this.updateAllStocks();
+
+    // 종목 추가 후 창 크기 재조정
+    this.adjustWindowSize();
   }
 
   async removeStock(index) {
@@ -478,6 +553,9 @@ class MaanStockApp {
     await this.saveStocks();
     this.renderStockList();
     this.updateMenuBar();
+
+    // 종목 제거 후 창 크기 재조정
+    this.adjustWindowSize();
   }
 }
 

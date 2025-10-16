@@ -8,7 +8,14 @@ if (typeof global.File === "undefined") {
   };
 }
 
-const { app, BrowserWindow, Tray, nativeImage, ipcMain, dialog } = require("electron");
+const {
+  app,
+  BrowserWindow,
+  Tray,
+  nativeImage,
+  ipcMain,
+  dialog,
+} = require("electron");
 const path = require("path");
 const fs = require("fs");
 const Store = require("electron-store");
@@ -33,7 +40,7 @@ function getResourcePath(relativePath) {
 function createWindow() {
   window = new BrowserWindow({
     width: 360,
-    height: 360,
+    height: 400,
     show: false,
     frame: false,
     resizable: false,
@@ -46,6 +53,27 @@ function createWindow() {
   });
 
   window.loadFile(path.join(__dirname, "../renderer/index.html"));
+
+  // 페이지 로드 완료 후 실제 content 높이로 조정
+  window.webContents.on("did-finish-load", () => {
+    setTimeout(() => {
+      window.webContents
+        .executeJavaScript(
+          "document.querySelector('.container').offsetHeight"
+        )
+        .then((height) => {
+          if (height > 0) {
+            const currentBounds = window.getBounds();
+            window.setBounds({
+              x: currentBounds.x,
+              y: currentBounds.y,
+              width: 360,
+              height: height,
+            });
+          }
+        });
+    }, 100);
+  });
 
   window.on("blur", () => {
     if (!window.webContents.isDevToolsOpened()) {
@@ -124,7 +152,10 @@ app.whenReady().then(async () => {
   // DB가 있으면 로딩 화면 없이 시작 (즉시 사용 가능)
   if (dbExists) {
     window.webContents.on("did-finish-load", () => {
-      window.webContents.send("db-update-status", { loading: false, success: true });
+      window.webContents.send("db-update-status", {
+        loading: false,
+        success: true,
+      });
 
       // 첫 실행이면 환영 창을 화면 중앙에 표시
       if (isFirstLaunch) {
@@ -157,7 +188,10 @@ app.whenReady().then(async () => {
     try {
       await dbUpdater.updateDatabase();
       store.set("lastDBUpdate", Date.now());
-      window.webContents.send("db-update-status", { loading: false, success: true });
+      window.webContents.send("db-update-status", {
+        loading: false,
+        success: true,
+      });
 
       // 첫 설치 시 환영 창 표시
       if (isFirstLaunch) {
@@ -168,7 +202,11 @@ app.whenReady().then(async () => {
       }
     } catch (error) {
       console.error("[Maantano Ticker] DB 업데이트 실패:", error.message);
-      window.webContents.send("db-update-status", { loading: false, success: false, error: error.message });
+      window.webContents.send("db-update-status", {
+        loading: false,
+        success: false,
+        error: error.message,
+      });
     }
   }
 });
@@ -219,7 +257,10 @@ function createTrayImage(text) {
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
 
-  const defaultTextColor = "#000000";
+  // 다크모드: 검정색, 라이트모드: 흰색
+  const defaultTextColor = nativeTheme.shouldUseDarkColors
+    ? "#000000"
+    : "#ffffff";
 
   let x = padding;
   const y = menuBarHeight / 2 + 1;
@@ -303,7 +344,7 @@ ipcMain.handle("show-already-added-dialog", async () => {
     title: "알림",
     message: "이미 추가된 종목입니다.",
     buttons: ["OK"],
-    icon: icon
+    icon: icon,
   });
 });
 
@@ -311,7 +352,9 @@ ipcMain.handle("show-delisted-stocks-dialog", async (_, delistedStocks) => {
   const iconPath = getResourcePath("return.png");
   const icon = nativeImage.createFromPath(iconPath);
 
-  const stockNames = delistedStocks.map(s => `${s.name} (${s.symbol})`).join("\n");
+  const stockNames = delistedStocks
+    .map((s) => `${s.name} (${s.symbol})`)
+    .join("\n");
   const message = `다음 종목이 상장폐지 또는 조회 불가능하여 자동으로 제거되었습니다:\n\n${stockNames}`;
 
   await dialog.showMessageBox(window, {
@@ -319,6 +362,20 @@ ipcMain.handle("show-delisted-stocks-dialog", async (_, delistedStocks) => {
     title: "상장폐지 종목 자동 제거",
     message: message,
     buttons: ["확인"],
-    icon: icon
+    icon: icon,
   });
+});
+
+ipcMain.on("resize-window", (_, height) => {
+  if (window && height > 0) {
+    const currentBounds = window.getBounds();
+
+    // 창 높이만 변경 (x, y 위치는 유지)
+    window.setBounds({
+      x: currentBounds.x,
+      y: currentBounds.y,
+      width: 360,
+      height: Math.round(height)
+    }, true); // animate = true
+  }
 });
