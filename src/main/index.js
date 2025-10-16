@@ -257,10 +257,9 @@ function createTrayImage(text) {
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
 
-  // 다크모드: 검정색, 라이트모드: 흰색
-  const defaultTextColor = nativeTheme.shouldUseDarkColors
-    ? "#000000"
-    : "#ffffff";
+  // 사용자가 선택한 색상 또는 기본 색상
+  const savedColor = store.get("trayTextColor");
+  const defaultTextColor = savedColor || (nativeTheme.shouldUseDarkColors ? "#000000" : "#ffffff");
 
   let x = padding;
   const y = menuBarHeight / 2 + 1;

@@ -17,6 +17,9 @@ class MaanStockApp {
     this.autocompleteListEl = document.getElementById("autocompleteList");
     this.refreshButtonEl = document.getElementById("refreshButton");
     this.quitButtonEl = document.getElementById("quitButton");
+    this.settingsButtonEl = document.getElementById("settingsButton");
+    this.settingsSectionEl = document.getElementById("settingsSection");
+    this.colorPaletteEl = document.getElementById("colorPalette");
     this.loadingOverlayEl = document.getElementById("loadingOverlay");
 
     this.setupDBUpdateListener();
@@ -56,6 +59,10 @@ class MaanStockApp {
       this.handleSearchInput(e.target.value);
     });
 
+    this.settingsButtonEl.addEventListener("click", () => {
+      this.toggleSettingsSection();
+    });
+
     this.refreshButtonEl.addEventListener("click", () => {
       this.updateAllStocks();
     });
@@ -63,6 +70,83 @@ class MaanStockApp {
     this.quitButtonEl.addEventListener("click", () => {
       ipcRenderer.send("quit-app");
     });
+
+    // 색상 선택 이벤트
+    this.colorPaletteEl.addEventListener("click", (e) => {
+      const colorOption = e.target.closest(".color-option");
+      if (colorOption) {
+        this.selectTrayColor(colorOption.dataset.color);
+      }
+    });
+  }
+
+  async loadTrayColorPreference() {
+    try {
+      const savedColor = await ipcRenderer.invoke("store-get", "trayTextColor");
+      if (savedColor) {
+        // 저장된 색상 버튼에 선택 표시
+        const colorOptions = this.colorPaletteEl.querySelectorAll(".color-option");
+        colorOptions.forEach((option) => {
+          if (option.dataset.color === savedColor) {
+            option.classList.add("selected");
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Failed to load tray color preference:", error);
+    }
+  }
+
+  async selectTrayColor(color) {
+    try {
+      // 모든 색상 버튼에서 선택 해제
+      const colorOptions = this.colorPaletteEl.querySelectorAll(".color-option");
+      colorOptions.forEach((option) => {
+        option.classList.remove("selected");
+      });
+
+      // 선택한 색상 버튼에 선택 표시
+      const selectedOption = this.colorPaletteEl.querySelector(`[data-color="${color}"]`);
+      if (selectedOption) {
+        selectedOption.classList.add("selected");
+      }
+
+      // 색상 저장
+      await ipcRenderer.invoke("store-set", "trayTextColor", color);
+
+      // 메뉴바 업데이트
+      this.updateMenuBar();
+    } catch (error) {
+      console.error("Failed to save tray color:", error);
+    }
+  }
+
+  toggleSettingsSection() {
+    const isHidden = this.settingsSectionEl.classList.contains("hidden");
+
+    if (isHidden) {
+      // 검색창이 열려있으면 닫기
+      if (!this.searchSectionEl.classList.contains("hidden")) {
+        this.toggleSearchSection();
+      }
+
+      this.settingsSectionEl.classList.remove("hidden");
+
+      // 색상 선택 상태 로드
+      this.loadTrayColorPreference();
+
+      // 창 크기 조정
+      requestAnimationFrame(() => {
+        this.adjustWindowSize();
+      });
+    } else {
+      this.settingsSectionEl.classList.add("hidden");
+
+      // 창 크기 조정
+      requestAnimationFrame(() => {
+        this.adjustWindowSize();
+      });
+    }
   }
 
   setupDBUpdateListener() {
@@ -393,6 +477,11 @@ class MaanStockApp {
     const isHidden = this.searchSectionEl.classList.contains("hidden");
 
     if (isHidden) {
+      // 설정창이 열려있으면 닫기
+      if (!this.settingsSectionEl.classList.contains("hidden")) {
+        this.toggleSettingsSection();
+      }
+
       // 환영 메시지 스타일 초기화 (검색창을 열 때)
       this.stockListEl.style.maxHeight = "";
       this.stockListEl.style.minHeight = "";
