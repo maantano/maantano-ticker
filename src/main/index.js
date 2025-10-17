@@ -58,9 +58,7 @@ function createWindow() {
   window.webContents.on("did-finish-load", () => {
     setTimeout(() => {
       window.webContents
-        .executeJavaScript(
-          "document.querySelector('.container').offsetHeight"
-        )
+        .executeJavaScript("document.querySelector('.container').offsetHeight")
         .then((height) => {
           if (height > 0) {
             const currentBounds = window.getBounds();
@@ -160,14 +158,16 @@ app.whenReady().then(async () => {
       // 첫 실행이면 환영 창을 화면 중앙에 표시
       if (isFirstLaunch) {
         store.set("firstLaunch", Date.now());
+        // 첫 설치 시 현재 시간을 lastDBUpdate로 설정 (빌드에 포함된 DB 사용)
+        store.set("lastDBUpdate", Date.now());
         setTimeout(() => {
           showWelcomeWindow();
         }, 2000);
       }
     });
 
-    // 업데이트가 필요하면 백그라운드에서 조용히 업데이트
-    if (needsUpdate) {
+    // 첫 설치가 아니고 업데이트가 필요하면 백그라운드에서 조용히 업데이트
+    if (!isFirstLaunch && needsUpdate) {
       console.log("[Maantano Ticker] 백그라운드에서 DB 업데이트 중...");
       setTimeout(async () => {
         try {
@@ -223,13 +223,32 @@ app.on("activate", () => {
 
 function createTrayImage(text) {
   const { nativeTheme } = require("electron");
-  const fontSize = 16;
+
+  // 텍스트 크기 설정 가져오기
+  const textSizePreset = store.get("trayTextSize") || "medium";
+
+  // 폰트 크기를 논리적 크기로 설정 (화면에 보이는 실제 크기)
+  const fontSizeMap = {
+    tiny: 10,
+    small: 12,
+    medium: 14,
+    large: 16,
+  };
+  const fontSize = fontSizeMap[textSizePreset] || 14;
+
   const menuBarHeight = 22;
   const padding = 5;
+  const scale = 2; // Retina 디스플레이를 위한 스케일
 
+  // 물리적 폰트 크기 = 논리적 크기 * scale
+  const physicalFontSize = fontSize * scale;
+
+  // 임시 캔버스로 텍스트 너비 측정 (물리적 폰트 크기로)
   const tempCanvas = createCanvas(1, 1);
   const tempCtx = tempCanvas.getContext("2d");
-  tempCtx.font = `${fontSize}px -apple-system, BlinkMacSystemFont, "SF Pro Text"`;
+  // Node canvas library requires simple font string - just size and generic family
+  const fontString = `${physicalFontSize}px sans-serif`;
+  tempCtx.font = fontString;
 
   const parts = text.split(" ");
   let totalWidth = 0;
@@ -247,22 +266,28 @@ function createTrayImage(text) {
     }
   }
 
-  const width = Math.ceil(totalWidth) + padding * 2;
+  const width = Math.ceil(totalWidth) + padding * 2 * scale;
 
-  const canvas = createCanvas(width, menuBarHeight);
+  // Retina 해상도로 캔버스 생성 (물리적 픽셀)
+  const canvas = createCanvas(width, menuBarHeight * scale);
   const ctx = canvas.getContext("2d");
 
-  ctx.clearRect(0, 0, width, menuBarHeight);
-  ctx.font = `${fontSize}px -apple-system, BlinkMacSystemFont, "SF Pro Text"`;
+  // 고해상도 렌더링 설정
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+
+  ctx.clearRect(0, 0, width, menuBarHeight * scale);
+  ctx.font = fontString; // Use the same font string
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
 
   // 사용자가 선택한 색상 또는 기본 색상
   const savedColor = store.get("trayTextColor");
-  const defaultTextColor = savedColor || (nativeTheme.shouldUseDarkColors ? "#000000" : "#ffffff");
+  const defaultTextColor =
+    savedColor || (nativeTheme.shouldUseDarkColors ? "#000000" : "#ffffff");
 
-  let x = padding;
-  const y = menuBarHeight / 2 + 1;
+  let x = padding * scale;
+  const y = (menuBarHeight * scale) / 2 + scale;
 
   for (let i = 0; i < parts.length; i++) {
     const part = parts[i];
@@ -279,7 +304,7 @@ function createTrayImage(text) {
 
     const drawY =
       part.includes("▲") || part.includes("▼") || part.includes("%")
-        ? y - 1
+        ? y - scale
         : y;
     ctx.fillText(part, x, drawY);
 
@@ -291,7 +316,12 @@ function createTrayImage(text) {
   }
 
   const buffer = canvas.toBuffer("image/png");
-  const image = nativeImage.createFromBuffer(buffer);
+
+  // scaleFactor로 Retina 선명도 유지
+  const image = nativeImage.createFromBuffer(buffer, {
+    scaleFactor: scale,
+  });
+
   image.setTemplateImage(false);
   return image;
 }
@@ -370,11 +400,14 @@ ipcMain.on("resize-window", (_, height) => {
     const currentBounds = window.getBounds();
 
     // 창 높이만 변경 (x, y 위치는 유지)
-    window.setBounds({
-      x: currentBounds.x,
-      y: currentBounds.y,
-      width: 360,
-      height: Math.round(height)
-    }, true); // animate = true
+    window.setBounds(
+      {
+        x: currentBounds.x,
+        y: currentBounds.y,
+        width: 360,
+        height: Math.round(height),
+      },
+      true
+    ); // animate = true
   }
 });
