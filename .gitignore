@@ -4,6 +4,7 @@ node_modules/
 # Build outputs (dist는 GitHub Actions에서 생성)
 dist/
 out/
+build/
 
 # macOS
 .DS_Store
