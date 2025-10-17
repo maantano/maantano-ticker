@@ -80,3 +80,25 @@ jobs:
             dist/*.zip
             dist/*.blockmap
           retention-days: 90
+
+      - name: Update Homebrew Cask
+        run: |
+          # Clone homebrew-maantano repository
+          git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/maantano/homebrew-maantano.git /tmp/homebrew-maantano
+          cd /tmp/homebrew-maantano
+
+          # Update version in Cask formula
+          sed -i '' "s/version \".*\"/version \"${{ steps.get_version.outputs.VERSION }}\"/" Casks/maantano-ticker.rb
+
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Commit and push if there are changes
+          if git diff --quiet; then
+            echo "No changes to Homebrew Cask"
+          else
+            git add Casks/maantano-ticker.rb
+            git commit -m "chore: bump maantano-ticker to v${{ steps.get_version.outputs.VERSION }}"
+            git push origin main
+          fi
