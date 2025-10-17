@@ -62,9 +62,10 @@
           ]
         }
       ],
-      "icon": "src/assets/icon.icns"
+      "icon": "src/assets/icon.icns",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false
     },
-    "afterPack": "./scripts/afterPack.js",
     "dmg": {
       "contents": [
         {
