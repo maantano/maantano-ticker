@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.2.0](https://github.com-maantano/maantano/maantano-ticker/compare/v1.1.0...v1.2.0) (2025-10-17)
+
+
+### 📚 Documentation
+
+* add Homebrew distribution setup ([1b9ff38](https://github.com-maantano/maantano/maantano-ticker/commit/1b9ff388a2d567cb6f7ca5716eae3859fc16c94e))
+* enhance README and add comprehensive user guide ([cbe146d](https://github.com-maantano/maantano/maantano-ticker/commit/cbe146d1f49b7e9922d505bf65fde4be2ac9b0db))
+
+
+### 🔧 Chores
+
+* add package-lock.json for reproducible builds ([8673114](https://github.com-maantano/maantano/maantano-ticker/commit/8673114304537cad25e45ec8fd49e59087e305f6))
+* improve release workflow and documentation ([345a23d](https://github.com-maantano/maantano/maantano-ticker/commit/345a23d46e1d6cf358b09e0ead068349c4068bfe))
+* update .gitignore to exclude build folder ([1f578ff](https://github.com-maantano/maantano/maantano-ticker/commit/1f578ffe47738020c8d1c628ee3fb0a78d3f0c43))
+* update stocks database ([84afd47](https://github.com-maantano/maantano/maantano-ticker/commit/84afd47fdda8e2fc882ee2f4eb78d5691ed9dc3f))
+
 ## [1.1.0](https://github.com-maantano/maantano/maantano-ticker/compare/v1.0.1...v1.1.0) (2025-10-16)
 
 
