@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.2.1](https://github.com-maantano/maantano/maantano-ticker/compare/v1.2.0...v1.2.1) (2025-10-17)
+
+
+### 🔧 Chores
+
+* update Homebrew cask formula for v1.2.0 ([2b0be13](https://github.com-maantano/maantano/maantano-ticker/commit/2b0be13f704fa7387d2d8668eedd1fe7d2f95c11))
+
+
+### ✨ Features
+
+* add automatic Homebrew Cask update to release workflow ([91e15e0](https://github.com-maantano/maantano/maantano-ticker/commit/91e15e0f3a5786f8e31a900de85c62600689def0))
+
+
+### 📚 Documentation
+
+* update README with Homebrew installation instructions ([ecea138](https://github.com-maantano/maantano/maantano-ticker/commit/ecea1387bbb4b5c9e2427932364d827b5ce4dc42))
+
 ## [1.2.0](https://github.com-maantano/maantano/maantano-ticker/compare/v1.1.0...v1.2.0) (2025-10-17)
 
 
