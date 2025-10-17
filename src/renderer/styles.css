@@ -448,6 +448,44 @@ body {
   text-shadow: none;
 }
 
+/* 텍스트 크기 선택 UI */
+.size-options {
+  display: flex;
+  gap: 8px;
+  padding: 8px 4px;
+}
+
+.size-option {
+  flex: 1;
+  padding: 10px 8px;
+  background: var(--bg-primary);
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: center;
+}
+
+.size-option:hover {
+  background: var(--bg-hover);
+  border-color: var(--text-secondary);
+}
+
+.size-option.selected {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  color: white;
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+}
+
+.size-label {
+  display: block;
+}
+
 .setting-value {
   color: var(--accent-color);
   font-weight: 600;
@@ -510,6 +548,27 @@ body {
 
 .footer-button:active {
   transform: scale(0.95);
+}
+
+/* 새로고침 버튼 로딩 상태 */
+.footer-button.loading {
+  opacity: 0.6;
+  cursor: not-allowed;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+.footer-button.loading:hover {
+  background: transparent;
+  color: var(--text-secondary);
 }
 
 .empty-state {
