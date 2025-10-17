@@ -8,6 +8,8 @@ class MaanStockApp {
     this.dataManager = new StockDataManager();
     this.updateInterval = null;
     this.searchTimeout = null;
+    this.refreshDebounceTimeout = null; // 디바운싱용 타이머
+    this.isUpdating = false; // 중복 요청 방지 플래그
 
     this.containerEl = document.querySelector(".container");
     this.stockListEl = document.getElementById("stockList");
@@ -20,6 +22,7 @@ class MaanStockApp {
     this.settingsButtonEl = document.getElementById("settingsButton");
     this.settingsSectionEl = document.getElementById("settingsSection");
     this.colorPaletteEl = document.getElementById("colorPalette");
+    this.sizeOptionsEl = document.getElementById("sizeOptions");
     this.loadingOverlayEl = document.getElementById("loadingOverlay");
 
     this.setupDBUpdateListener();
@@ -50,6 +53,34 @@ class MaanStockApp {
     });
   }
 
+  /**
+   * 주식 시장 거래 시간 체크
+   * - 월~금요일: 09:00 ~ 15:30 (KST)
+   * - 주말 및 공휴일은 거래 불가
+   */
+  isMarketOpen() {
+    const now = new Date();
+    const kstOffset = 9 * 60; // KST는 UTC+9
+    const utcOffset = now.getTimezoneOffset();
+    const kstTime = new Date(now.getTime() + (kstOffset + utcOffset) * 60000);
+
+    const day = kstTime.getDay(); // 0 (일요일) ~ 6 (토요일)
+    const hours = kstTime.getHours();
+    const minutes = kstTime.getMinutes();
+
+    // 주말 체크 (토요일, 일요일)
+    if (day === 0 || day === 6) {
+      return false;
+    }
+
+    // 거래 시간: 09:00 ~ 15:30 (KST)
+    const currentTimeInMinutes = hours * 60 + minutes;
+    const marketOpenTime = 9 * 60; // 09:00
+    const marketCloseTime = 15 * 60 + 30; // 15:30
+
+    return currentTimeInMinutes >= marketOpenTime && currentTimeInMinutes <= marketCloseTime;
+  }
+
   setupEventListeners() {
     this.addButtonEl.addEventListener("click", () => {
       this.toggleSearchSection();
@@ -64,7 +95,14 @@ class MaanStockApp {
     });
 
     this.refreshButtonEl.addEventListener("click", () => {
-      this.updateAllStocks();
+      // 디바운싱 적용: 연속 클릭 시 마지막 클릭만 처리
+      if (this.refreshDebounceTimeout) {
+        clearTimeout(this.refreshDebounceTimeout);
+      }
+
+      this.refreshDebounceTimeout = setTimeout(() => {
+        this.updateAllStocks(true); // 수동 클릭 시에만 로딩 표시
+      }, 500); // 500ms 디바운싱
     });
 
     this.quitButtonEl.addEventListener("click", () => {
@@ -76,6 +114,14 @@ class MaanStockApp {
       const colorOption = e.target.closest(".color-option");
       if (colorOption) {
         this.selectTrayColor(colorOption.dataset.color);
+      }
+    });
+
+    // 텍스트 크기 선택 이벤트
+    this.sizeOptionsEl.addEventListener("click", (e) => {
+      const sizeOption = e.target.closest(".size-option");
+      if (sizeOption) {
+        this.selectTrayTextSize(sizeOption.dataset.size);
       }
     });
   }
@@ -94,6 +140,25 @@ class MaanStockApp {
       }
     } catch (error) {
       console.error("Failed to load tray color preference:", error);
+    }
+  }
+
+  async loadTrayTextSizePreference() {
+    try {
+      const savedSize = await ipcRenderer.invoke("store-get", "trayTextSize");
+      const size = savedSize || "medium";
+
+      // 저장된 크기 버튼에 선택 표시
+      const sizeOptions = this.sizeOptionsEl.querySelectorAll(".size-option");
+      sizeOptions.forEach((option) => {
+        if (option.dataset.size === size) {
+          option.classList.add("selected");
+        } else {
+          option.classList.remove("selected");
+        }
+      });
+    } catch (error) {
+      console.error("Failed to load tray text size preference:", error);
     }
   }
 
@@ -121,6 +186,34 @@ class MaanStockApp {
     }
   }
 
+  async selectTrayTextSize(size) {
+    try {
+      console.log(`[Renderer] 텍스트 크기 선택: ${size}`);
+
+      // 모든 크기 버튼에서 선택 해제
+      const sizeOptions = this.sizeOptionsEl.querySelectorAll(".size-option");
+      sizeOptions.forEach((option) => {
+        option.classList.remove("selected");
+      });
+
+      // 선택한 크기 버튼에 선택 표시
+      const selectedOption = this.sizeOptionsEl.querySelector(`[data-size="${size}"]`);
+      if (selectedOption) {
+        selectedOption.classList.add("selected");
+      }
+
+      // 크기 저장
+      await ipcRenderer.invoke("store-set", "trayTextSize", size);
+      console.log(`[Renderer] 텍스트 크기 저장 완료: ${size}`);
+
+      // 메뉴바 업데이트
+      console.log(`[Renderer] 메뉴바 업데이트 호출`);
+      this.updateMenuBar();
+    } catch (error) {
+      console.error("Failed to save tray text size:", error);
+    }
+  }
+
   toggleSettingsSection() {
     const isHidden = this.settingsSectionEl.classList.contains("hidden");
 
@@ -132,8 +225,9 @@ class MaanStockApp {
 
       this.settingsSectionEl.classList.remove("hidden");
 
-      // 색상 선택 상태 로드
+      // 색상 및 텍스트 크기 선택 상태 로드
       this.loadTrayColorPreference();
+      this.loadTrayTextSizePreference();
 
       // 창 크기 조정
       requestAnimationFrame(() => {
@@ -181,6 +275,26 @@ class MaanStockApp {
     }
   }
 
+  /**
+   * 새로고침 버튼 로딩 상태 표시
+   */
+  showRefreshLoading() {
+    if (this.refreshButtonEl) {
+      this.refreshButtonEl.classList.add("loading");
+      this.refreshButtonEl.disabled = true;
+    }
+  }
+
+  /**
+   * 새로고침 버튼 로딩 상태 해제
+   */
+  hideRefreshLoading() {
+    if (this.refreshButtonEl) {
+      this.refreshButtonEl.classList.remove("loading");
+      this.refreshButtonEl.disabled = false;
+    }
+  }
+
   async loadStocks() {
     try {
       const savedData = await ipcRenderer.invoke("store-get", "stocks");
@@ -201,8 +315,27 @@ class MaanStockApp {
     }
   }
 
-  async updateAllStocks() {
+  async updateAllStocks(showLoading = false) {
     if (this.stocks.length === 0) return;
+
+    // 중복 요청 방지
+    if (this.isUpdating) {
+      console.log("[Maantano Ticker] 이미 업데이트 중입니다.");
+      return;
+    }
+
+    // 거래 시간 체크
+    if (!this.isMarketOpen()) {
+      console.log("[Maantano Ticker] 거래 시간이 아닙니다. (월~금 09:00~15:30만 업데이트)");
+      return;
+    }
+
+    this.isUpdating = true;
+
+    // 수동 클릭일 때만 로딩 표시
+    if (showLoading) {
+      this.showRefreshLoading();
+    }
 
     try {
       await this.dataManager.updateMultipleStocks(this.stocks);
@@ -214,6 +347,13 @@ class MaanStockApp {
       this.updateMenuBar();
     } catch (error) {
       console.error("Failed to update stocks:", error);
+    } finally {
+      this.isUpdating = false;
+
+      // 수동 클릭일 때만 로딩 해제
+      if (showLoading) {
+        this.hideRefreshLoading();
+      }
     }
   }
 
