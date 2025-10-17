@@ -50,7 +50,10 @@ Maantano Ticker는 macOS 메뉴바에 실시간 한국 주식 시세를 표시�
 1. `Maantano-Ticker-x.x.x.dmg` 파일 다운로드
 2. DMG 파일 열기
 3. Maantano Ticker 아이콘을 Applications 폴더로 드래그
-4. Applications에서 실행
+4. Applications에서 **우클릭** → **"열기"** 선택 (보안 경고 우회)
+5. "열기" 버튼 클릭
+
+**참고**: 코드 서명이 없어 첫 실행 시 보안 경고가 표시됩니다. 이는 정상이며 안전합니다.
 
 #### 소스에서 빌드
 ```bash

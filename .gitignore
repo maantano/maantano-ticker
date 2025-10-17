@@ -1,10 +1,8 @@
 # Dependencies
 node_modules/
-package-lock.json
 
-# Build outputs
+# Build outputs (dist는 GitHub Actions에서 생성)
 dist/
-build/
 out/
 
 # macOS

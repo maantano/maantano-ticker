@@ -31,15 +31,43 @@ jobs:
         id: get_version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
+      - name: List build artifacts
+        run: |
+          echo "=== Build artifacts ==="
+          ls -lh dist/
+          echo "=== DMG files ==="
+          ls -lh dist/*.dmg || echo "No DMG files found"
+          echo "=== ZIP files ==="
+          ls -lh dist/*.zip || echo "No ZIP files found"
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
             dist/*.dmg
             dist/*.zip
+            dist/*.dmg.blockmap
+            dist/*.zip.blockmap
           draft: false
           prerelease: false
           generate_release_notes: true
+          body: |
+            ## 다운로드
+
+            ### macOS
+            - **Apple Silicon (M1/M2/M3)**: `Maantano-Ticker-${{ steps.get_version.outputs.VERSION }}-arm64.dmg`
+            - **Intel Mac**: `Maantano-Ticker-${{ steps.get_version.outputs.VERSION }}.dmg`
+
+            ### 설치 방법
+            1. DMG 파일 다운로드
+            2. 열어서 Applications 폴더로 드래그
+            3. Applications에서 **우클릭** → **"열기"** 선택
+            4. "열기" 버튼 클릭
+
+            ### Homebrew
+            ```bash
+            brew install --cask maantano-ticker
+            ```
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -50,3 +78,5 @@ jobs:
           path: |
             dist/*.dmg
             dist/*.zip
+            dist/*.blockmap
+          retention-days: 90
