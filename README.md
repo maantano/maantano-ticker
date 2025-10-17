@@ -4,9 +4,10 @@
 
 **macOS 메뉴바에서 한국 주식 실시간 시세를 확인하는 앱**
 
-![Version](https://img.shields.io/badge/version-1.1.0-blue)
+![Version](https://img.shields.io/badge/version-1.2.0-blue)
 ![Platform](https://img.shields.io/badge/platform-macOS-lightgrey)
 ![License](https://img.shields.io/badge/license-MIT-green)
+[![Homebrew](https://img.shields.io/badge/homebrew-available-orange)](https://github.com/maantano/homebrew-maantano)
 
 </div>
 
@@ -20,6 +21,7 @@ Maantano Ticker는 macOS 메뉴바에 실시간 한국 주식 시세를 표시�
 - 📊 **실시간 시세 조회**: 네이버 증권 API를 통한 실시간 주가 데이터
 - 🖥️ **메뉴바 통합**: macOS 메뉴바에 첫 번째 종목의 현재가, 등락률 표시
 - 🎨 **색상 커스터마이징**: 메뉴바 텍스트 색상을 9가지 컬러로 변경 가능
+- 📏 **텍스트 크기 조절**: Tiny, Small, Medium, Large 4가지 크기 옵션
 - 📈 **다중 종목 관리**: 여러 종목을 동시에 추적 및 관리
 - 🔍 **스마트 검색**: 종목명/코드 자동완성 검색 (코스피/코스닥 전체 종목)
 - ⏱️ **자동 업데이트**: 5초 간격 자동 시세 갱신
@@ -44,10 +46,32 @@ Maantano Ticker는 macOS 메뉴바에 실시간 한국 주식 시세를 표시�
 
 ### 다운로드 및 설치
 
-#### 사전 빌드된 앱 다운로드 (권장)
+#### Homebrew로 설치 (가장 간편, 권장)
+```bash
+# Tap 추가
+brew tap maantano/maantano
+
+# 설치
+brew install --cask maantano-ticker
+
+# 또는 한 줄로 설치
+brew install --cask maantano/maantano/maantano-ticker
+```
+
+**업그레이드**:
+```bash
+brew upgrade --cask maantano-ticker
+```
+
+**삭제**:
+```bash
+brew uninstall --cask maantano-ticker
+```
+
+#### 사전 빌드된 앱 다운로드
 [Releases 페이지](../../releases)에서 최신 DMG 파일을 다운로드하세요.
 
-1. `Maantano-Ticker-x.x.x.dmg` 파일 다운로드
+1. `Maantano.Ticker-x.x.x.dmg` 파일 다운로드 (Apple Silicon) 또는 `Maantano.Ticker-x.x.x.dmg` (Intel)
 2. DMG 파일 열기
 3. Maantano Ticker 아이콘을 Applications 폴더로 드래그
 4. Applications에서 **우클릭** → **"열기"** 선택 (보안 경고 우회)
@@ -185,6 +209,7 @@ npm run release:major   # 1.1.0 → 2.0.0
 자세한 릴리스 프로세스는 [RELEASE.md](./RELEASE.md)를 참조하세요.
 
 ### 최근 릴리스
+- **v1.2.0** (2025-10-17): 메뉴바 텍스트 크기 조절 기능 추가, Homebrew 배포 시작
 - **v1.1.0** (2025-10-16): 트레이 텍스트 색상 커스터마이징 기능 추가
 - **v1.0.1**: 동적 창 크기 조정 및 환영 화면 개선
 - **v1.0.0**: 초기 릴리스
