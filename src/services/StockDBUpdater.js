@@ -24,8 +24,9 @@ class StockDBUpdater {
 
   /**
    * 전체 종목 DB 업데이트
+   * @param {Function} onProgress - 진행 상황 콜백 (message, progress)
    */
-  async updateDatabase() {
+  async updateDatabase(onProgress = null) {
     console.log('[StockDB] 전체 종목 업데이트 시작...');
 
     try {
@@ -33,12 +34,14 @@ class StockDBUpdater {
 
       // 코스피 크롤링
       console.log('[StockDB] 코스피 종목 수집 중...');
-      const kospiStocks = await this.crawlMarket('0', 'KOSPI');
+      if (onProgress) onProgress('코스피 종목 수집 중...', 0);
+      const kospiStocks = await this.crawlMarket('0', 'KOSPI', onProgress);
       allStocks.push(...kospiStocks);
 
       // 코스닥 크롤링
       console.log('[StockDB] 코스닥 종목 수집 중...');
-      const kosdaqStocks = await this.crawlMarket('1', 'KOSDAQ');
+      if (onProgress) onProgress('코스닥 종목 수집 중...', 50);
+      const kosdaqStocks = await this.crawlMarket('1', 'KOSDAQ', onProgress);
       allStocks.push(...kosdaqStocks);
 
       // 중복 제거
@@ -50,8 +53,10 @@ class StockDBUpdater {
       }
 
       // DB 파일에 저장
+      if (onProgress) onProgress('종목 데이터 저장 중...', 95);
       this.saveToFile(uniqueStocks);
 
+      if (onProgress) onProgress('완료!', 100);
       console.log(`[StockDB] ✓ 업데이트 완료: 총 ${uniqueStocks.length}개 종목`);
       return uniqueStocks;
 
@@ -66,11 +71,13 @@ class StockDBUpdater {
    * 특정 시장의 전체 종목 크롤링
    * @param {string} sosok - 시장 구분 (0: 코스피, 1: 코스닥)
    * @param {string} marketName - 시장 이름
+   * @param {Function} onProgress - 진행 상황 콜백
    */
-  async crawlMarket(sosok, marketName) {
+  async crawlMarket(sosok, marketName, onProgress = null) {
     const stocks = [];
     let page = 1;
     const maxPages = 50; // 최대 50페이지 (약 2,500개 종목)
+    const baseProgress = sosok === '0' ? 0 : 50; // 코스피: 0-50%, 코스닥: 50-100%
 
     while (page <= maxPages) {
       try {
@@ -113,6 +120,13 @@ class StockDBUpdater {
         }
 
         console.log(`[StockDB] ${marketName} 페이지 ${page}: ${foundInPage}개 수집`);
+
+        // 진행 상황 전달
+        if (onProgress) {
+          const progress = baseProgress + Math.floor((page / maxPages) * 50);
+          onProgress(`${marketName} ${page}/${maxPages} 페이지 (총 ${stocks.length}개 수집)`, progress);
+        }
+
         page++;
 
         // 요청 간 딜레이 (과도한 요청 방지, robots.txt 준수)
