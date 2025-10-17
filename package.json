@@ -43,6 +43,7 @@
     "appId": "com.maantano-ticker.app",
     "productName": "Maantano Ticker",
     "copyright": "Copyright © 2024 Maantano Ticker",
+    "publish": null,
     "mac": {
       "category": "public.app-category.finance",
       "target": [

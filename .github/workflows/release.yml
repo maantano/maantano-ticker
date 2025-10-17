@@ -24,8 +24,6 @@ jobs:
 
       - name: Build app
         run: npm run build:mac
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Get version from tag
         id: get_version
