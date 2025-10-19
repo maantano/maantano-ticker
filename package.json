@@ -46,6 +46,7 @@
     "publish": null,
     "mac": {
       "category": "public.app-category.finance",
+      "identity": null,
       "target": [
         {
           "target": "dmg",
@@ -64,7 +65,8 @@
       ],
       "icon": "src/assets/icon.icns",
       "hardenedRuntime": false,
-      "gatekeeperAssess": false
+      "gatekeeperAssess": false,
+      "type": "distribution"
     },
     "afterPack": "./scripts/afterPack.js",
     "dmg": {
