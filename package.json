@@ -1,6 +1,6 @@
 {
   "name": "maantano-ticker",
-  "version": "1.2.3",
+  "version": "1.3.0",
   "description": "한국 주식 실시간 시세 조회 - macOS 메뉴바 앱",
   "main": "src/main/index.js",
   "scripts": {

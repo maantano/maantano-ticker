@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.3.0](https://github.com-maantano/maantano/maantano-ticker/compare/v1.2.3...v1.3.0) (2025-10-20)
+
+
+### ✨ Features
+
+* add extended hours trading support for Korean stocks ([6280a50](https://github.com-maantano/maantano/maantano-ticker/commit/6280a50e18e38f68eb592ddb9c6ce7def13cd900))
+
 ### [1.2.3](https://github.com-maantano/maantano/maantano-ticker/compare/v1.2.2...v1.2.3) (2025-10-20)
 
 
