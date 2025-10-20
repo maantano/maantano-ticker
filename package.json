@@ -66,7 +66,9 @@
       "icon": "src/assets/icon.icns",
       "hardenedRuntime": false,
       "gatekeeperAssess": false,
-      "type": "distribution"
+      "type": "distribution",
+      "entitlements": "entitlements.mac.plist",
+      "entitlementsInherit": "entitlements.mac.plist"
     },
     "afterPack": "./scripts/afterPack.js",
     "dmg": {
