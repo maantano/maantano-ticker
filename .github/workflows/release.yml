@@ -81,10 +81,16 @@ jobs:
             dist/*.blockmap
           retention-days: 90
 
+      # Homebrew 자동 업데이트 (선택적)
+      # PAT_TOKEN Secret 설정 방법:
+      # 1. GitHub에서 Personal Access Token 생성 (repo 권한 필요)
+      # 2. Settings → Secrets and variables → Actions → New repository secret
+      # 3. Name: PAT_TOKEN, Value: 생성한 토큰
       - name: Update Homebrew Cask
+        if: ${{ secrets.PAT_TOKEN != '' }}
         run: |
           # Clone homebrew-maantano repository
-          git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/maantano/homebrew-maantano.git /tmp/homebrew-maantano
+          git clone https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/maantano/homebrew-maantano.git /tmp/homebrew-maantano
           cd /tmp/homebrew-maantano
 
           # Update version in Cask formula
@@ -102,3 +108,5 @@ jobs:
             git commit -m "chore: bump maantano-ticker to v${{ steps.get_version.outputs.VERSION }}"
             git push origin main
           fi
+        env:
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
