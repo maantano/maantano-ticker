@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.2.3](https://github.com-maantano/maantano/maantano-ticker/compare/v1.2.2...v1.2.3) (2025-10-20)
+
+
+### ✨ Features
+
+* add automated Homebrew update with PAT_TOKEN support ([88dc18e](https://github.com-maantano/maantano/maantano-ticker/commit/88dc18e91a52baa8eb1795f9511bd1b3ca7ccf66))
+
 ### [1.2.2](https://github.com-maantano/maantano/maantano-ticker/compare/v1.2.1...v1.2.2) (2025-10-20)
 
 ### [1.2.1](https://github.com-maantano/maantano/maantano-ticker/compare/v1.2.0...v1.2.1) (2025-10-17)
