@@ -61,9 +61,23 @@ class NaverFinanceService {
 
       const data = response.data.datas[0];
 
-      const currentPrice = this.parseNumber(data.closePrice);
-      const changePrice = this.parseNumber(data.compareToPreviousClosePrice);
-      const changePercent = parseFloat(data.fluctuationsRatio);
+      // 시간외 거래 시간인지 확인
+      const marketStatus = data.marketStatus;
+      const isExtendedHours = marketStatus === 'PREOPEN' || marketStatus === 'PRECLOSE' || marketStatus === 'AFTERCLOSE';
+
+      let currentPrice, changePrice, changePercent;
+
+      // 시간외 거래 데이터가 있으면 우선 사용
+      if (isExtendedHours && data.overMarketPriceInfo && data.overMarketPriceInfo.overPrice) {
+        currentPrice = this.parseNumber(data.overMarketPriceInfo.overPrice);
+        changePrice = this.parseNumber(data.overMarketPriceInfo.compareToPreviousClosePrice);
+        changePercent = parseFloat(data.overMarketPriceInfo.fluctuationsRatio);
+      } else {
+        // 정규장 데이터 사용
+        currentPrice = this.parseNumber(data.closePrice);
+        changePrice = this.parseNumber(data.compareToPreviousClosePrice);
+        changePercent = parseFloat(data.fluctuationsRatio);
+      }
 
       if (!currentPrice) {
         throw new Error('Could not parse current price');

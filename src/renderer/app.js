@@ -54,8 +54,12 @@ class MaanStockApp {
   }
 
   /**
-   * 주식 시장 거래 시간 체크
-   * - 월~금요일: 09:00 ~ 15:30 (KST)
+   * 주식 시장 거래 시간 체크 (시간외 거래 포함)
+   * - 월~금요일:
+   *   - 시간외 단일가 (개장 전): 08:30 ~ 09:00
+   *   - 정규 장: 09:00 ~ 15:30
+   *   - 시간외 단일가 (장 마감 후): 15:40 ~ 16:00
+   *   - 시간외 종가: 16:00 ~ 18:00
    * - 주말 및 공휴일은 거래 불가
    */
   isMarketOpen() {
@@ -73,12 +77,45 @@ class MaanStockApp {
       return false;
     }
 
-    // 거래 시간: 09:00 ~ 15:30 (KST)
     const currentTimeInMinutes = hours * 60 + minutes;
-    const marketOpenTime = 9 * 60; // 09:00
-    const marketCloseTime = 15 * 60 + 30; // 15:30
 
-    return currentTimeInMinutes >= marketOpenTime && currentTimeInMinutes <= marketCloseTime;
+    // 시간외 단일가 (개장 전): 08:30 ~ 09:00
+    const preMarketStart = 8 * 60 + 30; // 08:30
+    const preMarketEnd = 9 * 60; // 09:00
+
+    // 정규 장: 09:00 ~ 15:30
+    const regularMarketStart = 9 * 60; // 09:00
+    const regularMarketEnd = 15 * 60 + 30; // 15:30
+
+    // 시간외 단일가 (장 마감 후): 15:40 ~ 16:00
+    const postMarket1Start = 15 * 60 + 40; // 15:40
+    const postMarket1End = 16 * 60; // 16:00
+
+    // 시간외 종가: 16:00 ~ 18:00
+    const postMarket2Start = 16 * 60; // 16:00
+    const postMarket2End = 18 * 60; // 18:00
+
+    // 시간외 단일가 (개장 전)
+    if (currentTimeInMinutes >= preMarketStart && currentTimeInMinutes < preMarketEnd) {
+      return true;
+    }
+
+    // 정규 장
+    if (currentTimeInMinutes >= regularMarketStart && currentTimeInMinutes <= regularMarketEnd) {
+      return true;
+    }
+
+    // 시간외 단일가 (장 마감 후)
+    if (currentTimeInMinutes >= postMarket1Start && currentTimeInMinutes < postMarket1End) {
+      return true;
+    }
+
+    // 시간외 종가
+    if (currentTimeInMinutes >= postMarket2Start && currentTimeInMinutes < postMarket2End) {
+      return true;
+    }
+
+    return false;
   }
 
   setupEventListeners() {
@@ -326,7 +363,7 @@ class MaanStockApp {
 
     // 거래 시간 체크
     if (!this.isMarketOpen()) {
-      console.log("[Maantano Ticker] 거래 시간이 아닙니다. (월~금 09:00~15:30만 업데이트)");
+      console.log("[Maantano Ticker] 거래 시간이 아닙니다. (월~금 08:30~18:00, 시간외 거래 포함)");
       return;
     }
 
