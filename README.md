@@ -4,7 +4,7 @@
 
 **macOS 메뉴바에서 한국 주식 실시간 시세를 확인하는 앱**
 
-![Version](https://img.shields.io/badge/version-1.2.0-blue)
+![Version](https://img.shields.io/badge/version-1.3.0-blue)
 ![Platform](https://img.shields.io/badge/platform-macOS-lightgrey)
 ![License](https://img.shields.io/badge/license-MIT-green)
 [![Homebrew](https://img.shields.io/badge/homebrew-available-orange)](https://github.com/maantano/homebrew-maantano)
@@ -209,9 +209,10 @@ npm run release:major   # 1.1.0 → 2.0.0
 자세한 릴리스 프로세스는 [RELEASE.md](./RELEASE.md)를 참조하세요.
 
 ### 최근 릴리스
+- **v1.3.0** (2025-10-21): 시간외 거래 지원 추가 (08:30-18:00 KST)
+- **v1.2.3** (2025-10-20): Homebrew 자동 업데이트 및 배포 개선
 - **v1.2.0** (2025-10-17): 메뉴바 텍스트 크기 조절 기능 추가, Homebrew 배포 시작
 - **v1.1.0** (2025-10-16): 트레이 텍스트 색상 커스터마이징 기능 추가
-- **v1.0.1**: 동적 창 크기 조정 및 환영 화면 개선
 - **v1.0.0**: 초기 릴리스
 
 전체 변경 이력은 [CHANGELOG.md](./CHANGELOG.md)를 참조하세요.
