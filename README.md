@@ -46,38 +46,51 @@ Maantano Ticker는 macOS 메뉴바에 실시간 한국 주식 시세를 표시�
 
 ### 다운로드 및 설치
 
-#### Homebrew로 설치 (가장 간편, 권장)
-```bash
-# Tap 추가
-brew tap maantano/maantano
+#### Homebrew로 설치 (권장)
 
+**가장 간편한 방법입니다.** Gatekeeper 경고 없이 바로 실행됩니다.
+
+```bash
 # 설치
-brew install --cask maantano-ticker
+brew install --cask --no-quarantine maantano/maantano/maantano-ticker
 
-# 또는 한 줄로 설치
-brew install --cask maantano/maantano/maantano-ticker
-```
-
-**업그레이드**:
-```bash
+# 업그레이드
 brew upgrade --cask maantano-ticker
-```
 
-**삭제**:
-```bash
+# 삭제
 brew uninstall --cask maantano-ticker
 ```
 
 #### 사전 빌드된 앱 다운로드
 [Releases 페이지](../../releases)에서 최신 DMG 파일을 다운로드하세요.
 
-1. `Maantano.Ticker-x.x.x.dmg` 파일 다운로드 (Apple Silicon) 또는 `Maantano.Ticker-x.x.x.dmg` (Intel)
-2. DMG 파일 열기
-3. Maantano Ticker 아이콘을 Applications 폴더로 드래그
-4. Applications에서 **우클릭** → **"열기"** 선택 (보안 경고 우회)
-5. "열기" 버튼 클릭
+**다운로드:**
+- **Apple Silicon (M1/M2/M3)**: `Maantano-Ticker-x.x.x-Apple-Silicon.dmg`
+- **Intel**: `Maantano-Ticker-x.x.x-Intel.dmg`
 
-**참고**: 코드 서명이 없어 첫 실행 시 보안 경고가 표시됩니다. 이는 정상이며 안전합니다.
+**설치 방법:**
+
+1. DMG 파일을 다운로드하고 열기
+2. `Maantano Ticker` 아이콘을 `Applications` 폴더로 드래그
+3. Applications 폴더에서 `Maantano Ticker` 앱 더블클릭 시도
+4. **"확인할 수 없는 개발자" 경고**가 나타나면 **"확인"** 클릭
+
+**macOS Sequoia (15.0) 이상:**
+
+5. **시스템 설정** 열기 (상단 메뉴바  → 시스템 설정)
+6. **개인정보 보호 및 보안** 클릭
+7. 아래로 스크롤하여 **"보안"** 섹션 찾기
+8. **"확인 없이 열기"** 버튼 클릭
+9. 확인 대화상자에서 **"열기"** 클릭
+10. 앱이 정상적으로 실행됨
+
+**macOS Sonoma (14.x) 이하:**
+
+5. Applications 폴더에서 `Maantano Ticker` 앱 **우클릭**
+6. **"열기"** 선택
+7. 경고창에서 **"열기"** 버튼 클릭
+
+> **참고**: Apple Developer ID 서명이 없어 첫 실행 시 보안 경고가 표시됩니다. 이는 정상이며, 오픈소스 프로젝트로 안전합니다. 위 과정은 **최초 1회만** 필요하며, 이후에는 일반 앱처럼 실행됩니다.
 
 #### 소스에서 빌드
 ```bash
