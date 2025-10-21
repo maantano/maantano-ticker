@@ -808,7 +808,17 @@ class MaanStockApp {
     this.toggleSearchSection();
 
     await this.saveStocks();
-    await this.updateAllStocks();
+
+    // 종목 추가 시에는 거래 시간 체크 없이 즉시 가격 업데이트
+    try {
+      await this.dataManager.updateMultipleStocks(this.stocks);
+    } catch (error) {
+      console.error("Failed to update newly added stock:", error);
+    }
+
+    // 데이터 업데이트 후 UI 다시 렌더링
+    this.renderStockList();
+    this.updateMenuBar();
 
     // 종목 추가 후 창 크기 재조정
     this.adjustWindowSize();
