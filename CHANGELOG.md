@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.3.1](https://github.com-maantano/maantano/maantano-ticker/compare/v1.3.0...v1.3.1) (2025-10-21)
+
+
+### 📚 Documentation
+
+* add MIT LICENSE and improve project documentation ([5cbf007](https://github.com-maantano/maantano/maantano-ticker/commit/5cbf00721de6a95c43ee6503cee3f864289596fd))
+
+
+### 🐛 Bug Fixes
+
+* ensure menu bar updates immediately when adding stocks ([86f8e96](https://github.com-maantano/maantano/maantano-ticker/commit/86f8e96f8b8a2a9bf03609c888a4b5191abd9763))
+
 ## [1.3.0](https://github.com-maantano/maantano/maantano-ticker/compare/v1.2.3...v1.3.0) (2025-10-20)
 
 

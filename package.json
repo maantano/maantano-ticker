@@ -1,6 +1,6 @@
 {
   "name": "maantano-ticker",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "Real-time Korean Stock Market Ticker for macOS Menu Bar with Extended Hours Trading Support 🇰🇷📈",
   "main": "src/main/index.js",
   "scripts": {
