@@ -63,6 +63,39 @@ body {
   flex-direction: column;
 }
 
+/* 시장 탭 스타일 */
+.market-tabs {
+  display: flex;
+  padding: 8px 8px 0 8px;
+  gap: 4px;
+  background: #1a1a1a;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.market-tab {
+  flex: 1;
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border: none;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+}
+
+.market-tab:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.market-tab.active {
+  background: var(--accent-color);
+  color: white;
+}
+
 .stock-list {
   max-height: 195px;
   min-height: 60px;

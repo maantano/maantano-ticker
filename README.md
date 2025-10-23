@@ -2,9 +2,9 @@
 
 <div align="center">
 
-**macOS 메뉴바에서 한국 주식 실시간 시세를 확인하는 앱**
+**macOS 메뉴바에서 한국 및 미국 주식 실시간 시세를 확인하는 앱**
 
-![Version](https://img.shields.io/badge/version-1.3.0-blue)
+![Version](https://img.shields.io/badge/version-1.4.0-blue)
 ![Platform](https://img.shields.io/badge/platform-macOS-lightgrey)
 ![License](https://img.shields.io/badge/license-MIT-green)
 [![Homebrew](https://img.shields.io/badge/homebrew-available-orange)](https://github.com/maantano/homebrew-maantano)
@@ -13,18 +13,24 @@
 
 ## 📱 소개
 
-Maantano Ticker는 macOS 메뉴바에 실시간 한국 주식 시세를 표시하는 경량 데스크톱 앱입니다. 네이버 증권 API를 활용하여 실시간 주가 정보를 제공하며, 깔끔한 UI와 편리한 기능으로 주식 투자자들의 모니터링을 돕습니다.
+Maantano Ticker는 macOS 메뉴바에 실시간 주식 시세를 표시하는 경량 데스크톱 앱입니다. 한국(네이버 증권 API) 및 미국(Yahoo Finance API) 주식을 모두 지원하며, 깔끔한 UI와 편리한 기능으로 주식 투자자들의 모니터링을 돕습니다.
 
 ## ✨ 주요 기능
 
 ### 핵심 기능
-- 📊 **실시간 시세 조회**: 네이버 증권 API를 통한 실시간 주가 데이터
+- 🌏 **다중 시장 지원**: 한국 주식(KOSPI/KOSDAQ) 및 미국 주식(NASDAQ/NYSE/AMEX) 동시 지원
+- 📊 **실시간 시세 조회**: 네이버 증권 + Yahoo Finance API를 통한 실시간 주가 데이터
 - 🖥️ **메뉴바 통합**: macOS 메뉴바에 첫 번째 종목의 현재가, 등락률 표시
-- 🎨 **색상 커스터마이징**: 메뉴바 텍스트 색상을 9가지 컬러로 변경 가능
+- 🎨 **색상 커스터마이징**: 메뉴바 텍스트 색상을 10가지 컬러로 변경 가능
 - 📏 **텍스트 크기 조절**: Tiny, Small, Medium, Large 4가지 크기 옵션
 - 📈 **다중 종목 관리**: 여러 종목을 동시에 추적 및 관리
-- 🔍 **스마트 검색**: 종목명/코드 자동완성 검색 (코스피/코스닥 전체 종목)
+- 🔍 **스마트 검색**: 종목명/코드 자동완성 검색
+  - 한국: 코스피/코스닥 4,000+ 종목
+  - 미국: 주요 100+ 종목 (AAPL, MSFT, TSLA 등)
 - ⏱️ **자동 업데이트**: 5초 간격 자동 시세 갱신
+- 🕐 **거래 시간 지원**:
+  - 한국: 정규장 09:00-15:30, 시간외 단일가 08:30-09:00, 시간외 종가 15:40-18:00
+  - 미국: 정규장 09:30-16:00 (EST/EDT)
 
 ### 사용성
 - 🎯 **드래그 앤 드롭**: 직관적인 종목 순서 변경

@@ -60,7 +60,25 @@ class Stock {
       return this.currentPrice.toLocaleString('ko-KR');
     }
 
+    if (this.market === 'us') {
+      return `$${this.currentPrice.toFixed(2)}`;
+    }
+
     return this.currentPrice.toFixed(2);
+  }
+
+  // 통화 기호 반환
+  getCurrencySymbol() {
+    if (this.market === 'korea') return '₩';
+    if (this.market === 'us') return '$';
+    return '';
+  }
+
+  // 시장 표시명 반환
+  getMarketDisplayName() {
+    if (this.market === 'korea') return '한국';
+    if (this.market === 'us') return '미국';
+    return this.market;
   }
 
   getFormattedChange() {

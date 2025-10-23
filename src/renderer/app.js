@@ -5,6 +5,7 @@ const StockDataManager = require("../services/StockDataManager");
 class MaanStockApp {
   constructor() {
     this.stocks = [];
+    this.currentMarket = 'korea'; // 현재 선택된 시장
     this.dataManager = new StockDataManager();
     this.updateInterval = null;
     this.searchTimeout = null;
@@ -12,6 +13,7 @@ class MaanStockApp {
     this.isUpdating = false; // 중복 요청 방지 플래그
 
     this.containerEl = document.querySelector(".container");
+    this.marketTabsEl = document.getElementById("marketTabs");
     this.stockListEl = document.getElementById("stockList");
     this.addButtonEl = document.getElementById("addButton");
     this.searchSectionEl = document.getElementById("searchSection");
@@ -30,18 +32,43 @@ class MaanStockApp {
   }
 
   async init() {
+    await this.loadCurrentMarket();
     await this.loadStocks();
     this.setupEventListeners();
     await this.updateAllStocks();
     this.startAutoUpdate();
 
+    // 종목이 하나도 없거나, 현재 시장에 종목이 없으면 empty state 표시
     if (this.stocks.length === 0) {
       this.showEmptyState();
       this.updateMenuBar();
+    } else {
+      // 종목이 있으면 현재 시장 기준으로 렌더링
+      this.renderStockList();
     }
 
     // 초기 로드 완료 후 창 크기 조정
     this.adjustWindowSize();
+  }
+
+  async loadCurrentMarket() {
+    try {
+      const savedMarket = await ipcRenderer.invoke('store-get', 'currentMarket');
+      if (savedMarket) {
+        this.currentMarket = savedMarket;
+        // UI 업데이트
+        const tabs = this.marketTabsEl.querySelectorAll('.market-tab');
+        tabs.forEach(tab => {
+          if (tab.dataset.market === savedMarket) {
+            tab.classList.add('active');
+          } else {
+            tab.classList.remove('active');
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load current market:', error);
+    }
   }
 
   adjustWindowSize() {
@@ -54,7 +81,7 @@ class MaanStockApp {
   }
 
   /**
-   * 주식 시장 거래 시간 체크 (시간외 거래 포함)
+   * 한국 시장 거래 시간 체크 (시간외 거래 포함)
    * - 월~금요일:
    *   - 시간외 단일가 (개장 전): 08:30 ~ 09:00
    *   - 정규 장: 09:00 ~ 15:30
@@ -62,8 +89,8 @@ class MaanStockApp {
    *   - 시간외 종가: 16:00 ~ 18:00
    * - 주말 및 공휴일은 거래 불가
    */
-  isMarketOpen() {
-    const now = new Date();
+
+  isKoreaMarketOpen(now) {
     const kstOffset = 9 * 60; // KST는 UTC+9
     const utcOffset = now.getTimezoneOffset();
     const kstTime = new Date(now.getTime() + (kstOffset + utcOffset) * 60000);
@@ -118,7 +145,65 @@ class MaanStockApp {
     return false;
   }
 
+  /**
+   * 미국 시장 거래 시간 체크 (정규 장만)
+   * - 월~금요일: 09:30 ~ 16:00 (EST/EDT)
+   * - 주말 및 공휴일은 거래 불가
+   * - 서머타임 자동 적용 (3월 둘째 일요일 ~ 11월 첫째 일요일)
+   */
+  isUSMarketOpen(now) {
+    // EST/EDT 시간대 계산 (서머타임 고려)
+    // 미국 동부 시간은 UTC-5 (표준시) 또는 UTC-4 (서머타임)
+    const estOffset = -5 * 60; // EST는 UTC-5
+    const edtOffset = -4 * 60; // EDT는 UTC-4
+
+    // 서머타임 판단 (3월 둘째 일요일 ~ 11월 첫째 일요일)
+    const year = now.getUTCFullYear();
+    const marchSecondSunday = this.getNthSundayOfMonth(year, 2, 1);
+    const novemberFirstSunday = this.getNthSundayOfMonth(year, 10, 0);
+
+    const isDST = now >= marchSecondSunday && now < novemberFirstSunday;
+    const offset = isDST ? edtOffset : estOffset;
+
+    const utcOffset = now.getTimezoneOffset();
+    const estTime = new Date(now.getTime() + (offset + utcOffset) * 60000);
+
+    const day = estTime.getDay(); // 0 (일요일) ~ 6 (토요일)
+    const hours = estTime.getHours();
+    const minutes = estTime.getMinutes();
+
+    // 주말 체크 (토요일, 일요일)
+    if (day === 0 || day === 6) {
+      return false;
+    }
+
+    const currentTimeInMinutes = hours * 60 + minutes;
+
+    // 정규 장: 09:30 ~ 16:00
+    const regularMarketStart = 9 * 60 + 30; // 09:30
+    const regularMarketEnd = 16 * 60; // 16:00
+
+    // 정규 거래 시간만 체크
+    return currentTimeInMinutes >= regularMarketStart && currentTimeInMinutes <= regularMarketEnd;
+  }
+
+  // N번째 일요일 찾기 (서머타임 계산용)
+  getNthSundayOfMonth(year, month, n) {
+    const firstDay = new Date(Date.UTC(year, month, 1));
+    const firstSunday = 1 + (7 - firstDay.getUTCDay()) % 7;
+    const targetDate = firstSunday + (n * 7);
+    return new Date(Date.UTC(year, month, targetDate, 2, 0, 0)); // 02:00 UTC
+  }
+
   setupEventListeners() {
+    // 시장 탭 선택 이벤트
+    this.marketTabsEl.addEventListener("click", (e) => {
+      const marketTab = e.target.closest(".market-tab");
+      if (marketTab) {
+        this.selectMarket(marketTab.dataset.market);
+      }
+    });
+
     this.addButtonEl.addEventListener("click", () => {
       this.toggleSearchSection();
     });
@@ -361,12 +446,6 @@ class MaanStockApp {
       return;
     }
 
-    // 거래 시간 체크
-    if (!this.isMarketOpen()) {
-      console.log("[Maantano Ticker] 거래 시간이 아닙니다. (월~금 08:30~18:00, 시간외 거래 포함)");
-      return;
-    }
-
     this.isUpdating = true;
 
     // 수동 클릭일 때만 로딩 표시
@@ -375,7 +454,24 @@ class MaanStockApp {
     }
 
     try {
-      await this.dataManager.updateMultipleStocks(this.stocks);
+      const now = new Date();
+
+      // 각 종목별로 거래 시간 체크 후 업데이트
+      const stocksToUpdate = this.stocks.filter(stock => {
+        if (stock.market === 'korea') {
+          return this.isKoreaMarketOpen(now);
+        } else if (stock.market === 'us') {
+          return this.isUSMarketOpen(now);
+        }
+        return false;
+      });
+
+      if (stocksToUpdate.length > 0) {
+        console.log(`[Maantano Ticker] ${stocksToUpdate.length}개 종목 업데이트 중...`);
+        await this.dataManager.updateMultipleStocks(stocksToUpdate);
+      } else {
+        console.log("[Maantano Ticker] 거래 시간이 아닙니다.");
+      }
 
       // 상장폐지 종목 자동 제거
       await this.checkAndRemoveDelistedStocks();
@@ -406,12 +502,13 @@ class MaanStockApp {
 
       if (stock.isPossiblyDelisted()) {
         // DB에 종목이 없으면 상장폐지로 판단
-        const existsInDB = this.dataManager.isStockInDatabase(stock.symbol);
+        const existsInDB = this.dataManager.isStockInDatabase(stock.symbol, stock.market);
 
         if (!existsInDB) {
           delistedStocks.push({
             name: stock.name,
-            symbol: stock.symbol
+            symbol: stock.symbol,
+            market: stock.market
           });
           this.stocks.splice(i, 1);
         }
@@ -444,7 +541,10 @@ class MaanStockApp {
   }
 
   renderStockList() {
-    if (this.stocks.length === 0) {
+    // 현재 선택된 시장의 종목만 필터링
+    const filteredStocks = this.stocks.filter(stock => stock.market === this.currentMarket);
+
+    if (filteredStocks.length === 0) {
       this.showEmptyState();
       return;
     }
@@ -459,14 +559,16 @@ class MaanStockApp {
     this.stockListEl.style.justifyContent = "";
 
     // 3개 이상일 때만 스크롤 활성화
-    if (this.stocks.length >= 3) {
+    if (filteredStocks.length >= 3) {
       this.stockListEl.classList.add("has-scroll");
     } else {
       this.stockListEl.classList.remove("has-scroll");
     }
 
-    this.stocks.forEach((stock, index) => {
-      const stockItemEl = this.createStockItem(stock, index);
+    // 필터링된 종목 렌더링 (원본 인덱스 유지)
+    filteredStocks.forEach((stock) => {
+      const originalIndex = this.stocks.indexOf(stock);
+      const stockItemEl = this.createStockItem(stock, originalIndex);
       this.stockListEl.appendChild(stockItemEl);
     });
   }
@@ -545,8 +647,15 @@ class MaanStockApp {
       const items = [...this.stockListEl.querySelectorAll(".stock-item")];
       const newOrder = items.map((item) => parseInt(item.dataset.index));
 
-      const reorderedStocks = newOrder.map((oldIndex) => this.stocks[oldIndex]);
-      this.stocks = reorderedStocks;
+      // 현재 시장의 종목만 재정렬
+      const currentMarketStocks = this.stocks.filter(s => s.market === this.currentMarket);
+      const otherMarketStocks = this.stocks.filter(s => s.market !== this.currentMarket);
+
+      // 드래그된 순서로 현재 시장 종목 재정렬
+      const reorderedCurrentMarket = newOrder.map((oldIndex) => this.stocks[oldIndex]);
+
+      // 전체 배열 재구성: 현재 시장 종목(재정렬됨) + 다른 시장 종목(그대로 유지)
+      this.stocks = [...reorderedCurrentMarket, ...otherMarketStocks];
 
       await this.saveStocks();
       this.renderStockList();
@@ -581,8 +690,15 @@ class MaanStockApp {
 
     const text = document.createElement("div");
     text.className = "empty-state-text";
-    text.innerHTML =
-      "추가된 종목이 없습니다.<br>아래 버튼을 눌러 종목을 추가해보세요.";
+
+    // 시장별 메시지
+    if (this.currentMarket === 'korea') {
+      text.innerHTML = "추가된 한국 종목이 없습니다.<br>아래 버튼을 눌러 종목을 추가해보세요.";
+    } else if (this.currentMarket === 'us') {
+      text.innerHTML = "추가된 미국 종목이 없습니다.<br>아래 버튼을 눌러 종목을 추가해보세요.";
+    } else {
+      text.innerHTML = "추가된 종목이 없습니다.<br>아래 버튼을 눌러 종목을 추가해보세요.";
+    }
 
     emptyState.appendChild(icon);
     emptyState.appendChild(text);
@@ -640,13 +756,35 @@ class MaanStockApp {
   }
 
   updateMenuBar() {
+    console.log('[updateMenuBar] 호출됨');
+    console.log('[updateMenuBar] 전체 종목 수:', this.stocks.length);
+    console.log('[updateMenuBar] 현재 시장:', this.currentMarket);
+
     if (this.stocks.length === 0) {
+      console.log('[updateMenuBar] 종목 없음 - empty 표시');
       ipcRenderer.send("update-tray", { type: "empty" });
       return;
     }
 
-    const firstStock = this.stocks[0];
+    // 현재 선택된 시장의 첫 번째 종목 찾기
+    const currentMarketStocks = this.stocks.filter(stock => stock.market === this.currentMarket);
+    console.log('[updateMenuBar] 현재 시장 종목 수:', currentMarketStocks.length);
+
+    if (currentMarketStocks.length === 0) {
+      // 현재 시장에 종목이 없으면 다른 시장의 첫 번째 종목 표시
+      console.log('[updateMenuBar] 현재 시장에 종목 없음 - 전체 첫번째 표시');
+      const firstStock = this.stocks[0];
+      const title = firstStock.getMenuBarText();
+      console.log('[updateMenuBar] 메뉴바 타이틀:', title);
+      ipcRenderer.send("update-tray", { type: "stock", title });
+      return;
+    }
+
+    // 현재 시장의 첫 번째 종목 표시
+    console.log('[updateMenuBar] 현재 시장 첫번째 종목 표시');
+    const firstStock = currentMarketStocks[0];
     const title = firstStock.getMenuBarText();
+    console.log('[updateMenuBar] 메뉴바 타이틀:', title);
     ipcRenderer.send("update-tray", { type: "stock", title });
   }
 
@@ -741,11 +879,52 @@ class MaanStockApp {
 
   async performSearch(query) {
     try {
-      const results = await this.dataManager.searchStocks(query);
+      const results = await this.dataManager.searchStocks(query, this.currentMarket);
       this.renderAutocompleteResults(results);
     } catch (error) {
       console.error("Search error:", error);
     }
+  }
+
+  selectMarket(market) {
+    this.currentMarket = market;
+
+    // 탭 버튼 UI 업데이트
+    const tabs = this.marketTabsEl.querySelectorAll('.market-tab');
+    tabs.forEach(tab => {
+      if (tab.dataset.market === market) {
+        tab.classList.add('active');
+      } else {
+        tab.classList.remove('active');
+      }
+    });
+
+    // 검색창 플레이스홀더 업데이트
+    if (market === 'korea') {
+      this.searchInputEl.placeholder = '종목명 또는 종목코드 입력 (예: 삼성전자, 005930)';
+    } else if (market === 'us') {
+      this.searchInputEl.placeholder = '종목명 또는 심볼 입력 (예: Apple, AAPL)';
+    }
+
+    // 검색 중이면 검색 결과 초기화
+    if (!this.searchSectionEl.classList.contains('hidden')) {
+      this.autocompleteListEl.innerHTML = '';
+      this.searchInputEl.value = '';
+    }
+
+    // 종목 리스트 다시 렌더링 (필터링 적용)
+    this.renderStockList();
+
+    // 메뉴바 업데이트 (현재 시장의 첫 번째 종목 표시)
+    this.updateMenuBar();
+
+    // 창 크기 재조정
+    requestAnimationFrame(() => {
+      this.adjustWindowSize();
+    });
+
+    // 현재 시장 저장
+    ipcRenderer.invoke('store-set', 'currentMarket', market);
   }
 
   renderAutocompleteResults(results) {
@@ -804,14 +983,18 @@ class MaanStockApp {
     const stock = this.dataManager.createStock(symbol, name, market);
     this.stocks.push(stock);
 
-    this.renderStockList();
+    // 추가한 종목의 시장으로 탭 자동 전환
+    if (this.currentMarket !== market) {
+      this.selectMarket(market);
+    }
+
     this.toggleSearchSection();
 
     await this.saveStocks();
 
     // 종목 추가 시에는 거래 시간 체크 없이 즉시 가격 업데이트
     try {
-      await this.dataManager.updateMultipleStocks(this.stocks);
+      await this.dataManager.updateMultipleStocks([stock]);  // 추가한 종목만 업데이트
     } catch (error) {
       console.error("Failed to update newly added stock:", error);
     }
