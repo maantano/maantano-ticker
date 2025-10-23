@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.5.0](https://github.com-maantano/maantano/maantano-ticker/compare/v1.3.1...v1.5.0) (2025-10-23)
+
+
+### 📚 Documentation
+
+* add --no-quarantine flag to Homebrew install command ([edb5a57](https://github.com-maantano/maantano/maantano-ticker/commit/edb5a5709e9e9178b3b2cc73ca50e4a1694f13af))
+
+
+### ✨ Features
+
+* add US stock market support with market-based filtering ([e041d2c](https://github.com-maantano/maantano/maantano-ticker/commit/e041d2ccd77aeff272db3992cff7cb9ce852a145))
+
 ### [1.3.1](https://github.com-maantano/maantano/maantano-ticker/compare/v1.3.0...v1.3.1) (2025-10-21)
 
 
