@@ -15,6 +15,14 @@
 
 Maantano Ticker는 macOS 메뉴바에 실시간 주식 시세를 표시하는 경량 데스크톱 앱입니다. 한국(네이버 증권 API) 및 미국(Yahoo Finance API) 주식을 모두 지원하며, 깔끔한 UI와 편리한 기능으로 주식 투자자들의 모니터링을 돕습니다.
 
+## 🎬 데모
+
+<div align="center">
+
+![Maantano Ticker Demo](./assets/demo.gif)
+
+</div>
+
 ## ✨ 주요 기능
 
 ### 핵심 기능
