@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.6.0](https://github.com-maantano/maantano/maantano-ticker/compare/v1.5.0...v1.6.0) (2026-04-13)
+
+
+### 📚 Documentation
+
+* add demo video to README ([d095ab6](https://github.com-maantano/maantano/maantano-ticker/commit/d095ab6d7632a5ffcdf4695541225493d1620c01))
+* streamline installation guide and add menubar visibility warning ([b8df203](https://github.com-maantano/maantano/maantano-ticker/commit/b8df203ffa0084f518fbda764d1cdbbc95bea357))
+
+
+### ✨ Features
+
+* add Yahoo Finance Search API for US stock search ([0928092](https://github.com-maantano/maantano/maantano-ticker/commit/0928092021a9eb8e563446bd5a4edf1da0102da6))
+
 ## [1.5.0](https://github.com-maantano/maantano/maantano-ticker/compare/v1.3.1...v1.5.0) (2025-10-23)
 
 
