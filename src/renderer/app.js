@@ -502,7 +502,7 @@ class MaanStockApp {
 
       if (stock.isPossiblyDelisted()) {
         // DB에 종목이 없으면 상장폐지로 판단
-        const existsInDB = this.dataManager.isStockInDatabase(stock.symbol, stock.market);
+        const existsInDB = await this.dataManager.isStockInDatabase(stock.symbol, stock.market);
 
         if (!existsInDB) {
           delistedStocks.push({

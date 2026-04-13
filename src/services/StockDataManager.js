@@ -49,15 +49,21 @@ class StockDataManager {
    * 종목이 DB에 존재하는지 확인 (상장폐지 체크)
    * @param {string} symbol - 종목 코드
    * @param {string} market - 시장 ('korea' 또는 'us')
-   * @returns {boolean} - DB에 존재하면 true
+   * @returns {Promise<boolean>} - DB에 존재하면 true
    */
-  isStockInDatabase(symbol, market = 'korea') {
+  async isStockInDatabase(symbol, market = 'korea') {
     const service = this.serviceFactory.getService(market);
 
     if (market === 'korea') {
       return service.stocksDB.some(stock => stock.code === symbol);
     } else if (market === 'us') {
-      return service.stocksDB.some(stock => stock.symbol === symbol);
+      // 로컬 DB 먼저 확인
+      const existsLocally = service.stocksDB.some(stock => stock.symbol === symbol);
+      if (existsLocally) return true;
+
+      // 로컬 DB에 없으면 Yahoo API로 실제 존재 여부 확인
+      const results = await service.searchFromYahoo(symbol);
+      return results.some(stock => stock.symbol === symbol);
     }
 
     return false;

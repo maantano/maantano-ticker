@@ -135,30 +135,87 @@ class USStockService {
       }
 
       // 입력 검증: 최대 길이 제한 및 안전한 문자만 허용
-      const searchQuery = query.trim().substring(0, 50).toUpperCase();
+      const searchQuery = query.trim().substring(0, 50);
 
-      // 미국 주식은 영문과 점(.), 하이픈(-)만 허용
-      if (!/^[A-Z0-9.\-\s]+$/.test(searchQuery)) {
+      // 미국 주식은 영문과 점(.), 하이픈(-), 공백만 허용
+      if (!/^[A-Za-z0-9.\-\s]+$/.test(searchQuery)) {
         console.warn('[USStock] 유효하지 않은 검색어:', query);
         return [];
       }
 
-      // 로컬 DB에서 검색
-      const results = this.stocksDB.filter(stock => {
-        const symbolMatch = stock.symbol.toUpperCase().includes(searchQuery);
-        const nameMatch = stock.name.toUpperCase().includes(searchQuery);
-        return symbolMatch || nameMatch;
-      });
+      // Yahoo Finance Search API로 실시간 검색
+      const apiResults = await this.searchFromYahoo(searchQuery);
+      if (apiResults.length > 0) {
+        return apiResults;
+      }
 
-      return results.slice(0, 10).map(stock => ({
-        symbol: stock.symbol,
-        name: stock.name
-      }));
+      // API 실패 시 로컬 DB 폴백
+      console.log('[USStock] Yahoo API 결과 없음, 로컬 DB 폴백');
+      return this.searchFromLocalDB(searchQuery);
 
     } catch (error) {
       console.error('US stock search error:', error.message);
+      // API 오류 시 로컬 DB 폴백
+      return this.searchFromLocalDB(query);
+    }
+  }
+
+  /**
+   * Yahoo Finance Search API를 통한 실시간 종목 검색
+   */
+  async searchFromYahoo(query) {
+    try {
+      const url = `${this.baseUrl}/v1/finance/search`;
+      const response = await axios.get(url, {
+        params: {
+          q: query,
+          quotesCount: 10,
+          newsCount: 0,
+          listsCount: 0,
+          quotesQueryId: 'tss_match_phrase_query'
+        },
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+        },
+        timeout: 5000
+      });
+
+      if (!response.data || !response.data.quotes) {
+        return [];
+      }
+
+      // EQUITY 타입만 필터링 (ETF, 암호화폐 등 제외)
+      return response.data.quotes
+        .filter(q => q.quoteType === 'EQUITY' && q.isYahooFinance)
+        .slice(0, 10)
+        .map(q => ({
+          symbol: q.symbol,
+          name: q.longname || q.shortname || q.symbol
+        }));
+
+    } catch (error) {
+      console.error('[USStock] Yahoo Search API 오류:', error.message);
       return [];
     }
+  }
+
+  /**
+   * 로컬 DB에서 종목 검색 (폴백용)
+   */
+  searchFromLocalDB(query) {
+    if (!query) return [];
+    const searchQuery = query.trim().toUpperCase();
+
+    const results = this.stocksDB.filter(stock => {
+      const symbolMatch = stock.symbol.toUpperCase().includes(searchQuery);
+      const nameMatch = stock.name.toUpperCase().includes(searchQuery);
+      return symbolMatch || nameMatch;
+    });
+
+    return results.slice(0, 10).map(stock => ({
+      symbol: stock.symbol,
+      name: stock.name
+    }));
   }
 
   async getMultipleStockPrices(symbols) {
