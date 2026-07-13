@@ -5,6 +5,7 @@ const fs = require('fs');
 class USStockService {
   constructor() {
     // Yahoo Finance API 사용 (비공식이지만 널리 사용됨)
+    // 정규장은 최대 15분 지연 가능(거래소 무료 정책), 프리/애프터장은 includePrePost로 반영.
     this.baseUrl = 'https://query1.finance.yahoo.com';
 
     // Rate limiting 설정
@@ -77,7 +78,8 @@ class USStockService {
       const response = await axios.get(url, {
         params: {
           interval: '1m',
-          range: '1d'
+          range: '1d',
+          includePrePost: true // 프리장/애프터장 데이터 포함
         },
         headers: {
           'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
@@ -92,9 +94,24 @@ class USStockService {
       const result = response.data.chart.result[0];
       const meta = result.meta;
 
-      // 정규 거래 시간 가격 사용
-      const currentPrice = meta.regularMarketPrice;
       const previousClose = meta.chartPreviousClose || meta.previousClose;
+
+      // includePrePost=true 로 받은 분봉 중 마지막 유효 종가를 현재가로 사용.
+      // 프리장/애프터장이면 그 시간대 가격이, 아니면 정규장 마지막 가격이 잡힌다.
+      // (chart API의 meta에는 preMarketPrice/marketState 필드가 없음)
+      let currentPrice = null;
+      const closes = result.indicators && result.indicators.quote && result.indicators.quote[0]
+        ? result.indicators.quote[0].close
+        : null;
+      if (Array.isArray(closes)) {
+        for (let i = closes.length - 1; i >= 0; i--) {
+          if (closes[i] != null) { currentPrice = closes[i]; break; }
+        }
+      }
+      // 분봉이 비어있으면 정규장 가격으로 폴백
+      if (currentPrice == null) {
+        currentPrice = meta.regularMarketPrice;
+      }
 
       if (!currentPrice || !previousClose) {
         throw new Error('Could not parse price data');

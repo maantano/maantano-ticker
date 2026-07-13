@@ -61,19 +61,31 @@ class NaverFinanceService {
 
       const data = response.data.datas[0];
 
-      // 시간외 거래 시간인지 확인
-      const marketStatus = data.marketStatus;
-      const isExtendedHours = marketStatus === 'PREOPEN' || marketStatus === 'PRECLOSE' || marketStatus === 'AFTERCLOSE';
+      // 세션 판단 로직 (방어적):
+      // - data.marketStatus === 'OPEN' 이면 KRX 정규장(09:00~15:30) → closePrice 사용.
+      //   (정규장 중에도 overPrice 에 NXT 체결가가 동시에 오지만, 정규장 공식가는 closePrice 이므로 무시)
+      // - 정규장이 아닌데(marketStatus !== 'OPEN') overPrice 가 있으면
+      //   프리장/넥스트장(NXT)/애프터장 시간대의 시간외 실시간가 → overPrice 사용.
+      //
+      // Naver 는 비공식/미문서 API 라 overMarketStatus·tradingSessionType 의 정확한 enum 값
+      // (PRE_MARKET / NXT_* 등)을 프리·NXT 시간대에 실측 검증하지 못했다. 그래서 그 값들에
+      // 의존하지 않고 "정규장이 아니면서 overPrice 가 존재"라는 최소 조건만으로 판단한다.
+      // 이러면 시간외 세션에서 어떤 status/type 이 와도 overPrice 를 안전하게 집는다.
+      // TODO(실측): 프리장(08:30~09:00)·NXT/애프터(15:40~20:00) 시간대에 실제 응답으로
+      //   marketStatus/overMarketStatus/tradingSessionType/overPrice 값을 확인해 검증할 것.
+      const over = data.overMarketPriceInfo;
+      const isRegularOpen = data.marketStatus === 'OPEN';
+      const useExtended = !isRegularOpen && over && over.overPrice;
 
       let currentPrice, changePrice, changePercent;
 
-      // 시간외 거래 데이터가 있으면 우선 사용
-      if (isExtendedHours && data.overMarketPriceInfo && data.overMarketPriceInfo.overPrice) {
-        currentPrice = this.parseNumber(data.overMarketPriceInfo.overPrice);
-        changePrice = this.parseNumber(data.overMarketPriceInfo.compareToPreviousClosePrice);
-        changePercent = parseFloat(data.overMarketPriceInfo.fluctuationsRatio);
+      if (useExtended) {
+        // 프리장 / 넥스트장 / 애프터장 실시간가
+        currentPrice = this.parseNumber(over.overPrice);
+        changePrice = this.parseNumber(over.compareToPreviousClosePrice);
+        changePercent = parseFloat(over.fluctuationsRatio);
       } else {
-        // 정규장 데이터 사용
+        // 정규장(KRX) 데이터 사용
         currentPrice = this.parseNumber(data.closePrice);
         changePrice = this.parseNumber(data.compareToPreviousClosePrice);
         changePercent = parseFloat(data.fluctuationsRatio);

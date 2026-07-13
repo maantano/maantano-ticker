@@ -97,7 +97,8 @@ body {
 }
 
 .stock-list {
-  max-height: 195px;
+  /* max-height는 renderStockList()에서 표시 종목 수에 맞춰 인라인으로 설정 */
+  position: relative; /* 자식 .stock-item 의 offsetTop 기준점 (applyVisibleHeight) */
   min-height: 60px;
   overflow-y: hidden;
   overflow-x: hidden;
@@ -112,7 +113,6 @@ body {
 
 /* 검색창이 열릴 때 stock-list는 그대로 유지 (autocomplete는 absolute) */
 .container.searching .stock-list {
-  max-height: 195px;
   min-height: 60px;
 }
 

@@ -25,7 +25,10 @@ class MaanStockApp {
     this.settingsSectionEl = document.getElementById("settingsSection");
     this.colorPaletteEl = document.getElementById("colorPalette");
     this.sizeOptionsEl = document.getElementById("sizeOptions");
+    this.countOptionsEl = document.getElementById("countOptions");
     this.loadingOverlayEl = document.getElementById("loadingOverlay");
+
+    this.visibleStockCount = 3; // 팝오버에 스크롤 없이 보일 종목 수 (설정에서 변경)
 
     this.setupDBUpdateListener();
     this.init();
@@ -33,6 +36,7 @@ class MaanStockApp {
 
   async init() {
     await this.loadCurrentMarket();
+    await this.loadVisibleStockCount();
     await this.loadStocks();
     this.setupEventListeners();
     await this.updateAllStocks();
@@ -71,6 +75,38 @@ class MaanStockApp {
     }
   }
 
+  async loadVisibleStockCount() {
+    try {
+      const saved = await ipcRenderer.invoke('store-get', 'visibleStockCount');
+      if (saved) {
+        this.visibleStockCount = saved;
+      }
+    } catch (error) {
+      console.error('Failed to load visible stock count:', error);
+    }
+  }
+
+  async selectVisibleStockCount(count) {
+    this.visibleStockCount = parseInt(count);
+
+    const options = this.countOptionsEl.querySelectorAll('.size-option');
+    options.forEach((option) => {
+      option.classList.toggle('selected', option.dataset.count === String(count));
+    });
+
+    await ipcRenderer.invoke('store-set', 'visibleStockCount', this.visibleStockCount);
+
+    this.renderStockList();
+    requestAnimationFrame(() => this.adjustWindowSize());
+  }
+
+  loadVisibleStockCountUI() {
+    const options = this.countOptionsEl.querySelectorAll('.size-option');
+    options.forEach((option) => {
+      option.classList.toggle('selected', option.dataset.count === String(this.visibleStockCount));
+    });
+  }
+
   adjustWindowSize() {
     requestAnimationFrame(() => {
       const containerHeight = this.containerEl.offsetHeight;
@@ -81,73 +117,39 @@ class MaanStockApp {
   }
 
   /**
-   * 한국 시장 거래 시간 체크 (시간외 거래 포함)
-   * - 월~금요일:
-   *   - 시간외 단일가 (개장 전): 08:30 ~ 09:00
-   *   - 정규 장: 09:00 ~ 15:30
-   *   - 시간외 단일가 (장 마감 후): 15:40 ~ 16:00
-   *   - 시간외 종가: 16:00 ~ 18:00
-   * - 주말 및 공휴일은 거래 불가
+   * 한국 시장 거래 시간 체크 (프리장 + 정규장 + 넥스트장/시간외 포함)
+   * - 월~금요일 08:00 ~ 20:00 (KST): 프리장, 정규장(09:00~15:30),
+   *   시간외 단일가/종가, 넥스트레이드(NXT) 애프터마켓(~20:00)을 모두 포함.
+   *   각 시간대의 실시간가는 NaverFinanceService 가 응답의 세션 정보로 구분해 반환한다.
+   * - 주말 및 공휴일은 거래 불가 (공휴일은 미처리)
    */
-
   isKoreaMarketOpen(now) {
     const kstOffset = 9 * 60; // KST는 UTC+9
     const utcOffset = now.getTimezoneOffset();
     const kstTime = new Date(now.getTime() + (kstOffset + utcOffset) * 60000);
 
     const day = kstTime.getDay(); // 0 (일요일) ~ 6 (토요일)
-    const hours = kstTime.getHours();
-    const minutes = kstTime.getMinutes();
 
     // 주말 체크 (토요일, 일요일)
     if (day === 0 || day === 6) {
       return false;
     }
 
-    const currentTimeInMinutes = hours * 60 + minutes;
+    const currentTimeInMinutes = kstTime.getHours() * 60 + kstTime.getMinutes();
 
-    // 시간외 단일가 (개장 전): 08:30 ~ 09:00
-    const preMarketStart = 8 * 60 + 30; // 08:30
-    const preMarketEnd = 9 * 60; // 09:00
+    // 프리장 08:00 ~ NXT 애프터마켓 20:00 (정규장 09:00~15:30 포함)
+    const marketStart = 8 * 60; // 08:00
+    const marketEnd = 20 * 60; // 20:00
 
-    // 정규 장: 09:00 ~ 15:30
-    const regularMarketStart = 9 * 60; // 09:00
-    const regularMarketEnd = 15 * 60 + 30; // 15:30
-
-    // 시간외 단일가 (장 마감 후): 15:40 ~ 16:00
-    const postMarket1Start = 15 * 60 + 40; // 15:40
-    const postMarket1End = 16 * 60; // 16:00
-
-    // 시간외 종가: 16:00 ~ 18:00
-    const postMarket2Start = 16 * 60; // 16:00
-    const postMarket2End = 18 * 60; // 18:00
-
-    // 시간외 단일가 (개장 전)
-    if (currentTimeInMinutes >= preMarketStart && currentTimeInMinutes < preMarketEnd) {
-      return true;
-    }
-
-    // 정규 장
-    if (currentTimeInMinutes >= regularMarketStart && currentTimeInMinutes <= regularMarketEnd) {
-      return true;
-    }
-
-    // 시간외 단일가 (장 마감 후)
-    if (currentTimeInMinutes >= postMarket1Start && currentTimeInMinutes < postMarket1End) {
-      return true;
-    }
-
-    // 시간외 종가
-    if (currentTimeInMinutes >= postMarket2Start && currentTimeInMinutes < postMarket2End) {
-      return true;
-    }
-
-    return false;
+    return currentTimeInMinutes >= marketStart && currentTimeInMinutes <= marketEnd;
   }
 
   /**
-   * 미국 시장 거래 시간 체크 (정규 장만)
-   * - 월~금요일: 09:30 ~ 16:00 (EST/EDT)
+   * 미국 시장 거래 시간 체크 (프리장 + 정규장 + 애프터장)
+   * - 월~금요일 (EST/EDT):
+   *   - 프리장: 04:00 ~ 09:30
+   *   - 정규 장: 09:30 ~ 16:00
+   *   - 애프터장: 16:00 ~ 20:00
    * - 주말 및 공휴일은 거래 불가
    * - 서머타임 자동 적용 (3월 둘째 일요일 ~ 11월 첫째 일요일)
    */
@@ -179,12 +181,11 @@ class MaanStockApp {
 
     const currentTimeInMinutes = hours * 60 + minutes;
 
-    // 정규 장: 09:30 ~ 16:00
-    const regularMarketStart = 9 * 60 + 30; // 09:30
-    const regularMarketEnd = 16 * 60; // 16:00
+    // 프리장 04:00 ~ 애프터장 20:00 (정규장 09:30~16:00 포함)
+    const extendedStart = 4 * 60; // 04:00
+    const extendedEnd = 20 * 60; // 20:00
 
-    // 정규 거래 시간만 체크
-    return currentTimeInMinutes >= regularMarketStart && currentTimeInMinutes <= regularMarketEnd;
+    return currentTimeInMinutes >= extendedStart && currentTimeInMinutes <= extendedEnd;
   }
 
   // N번째 일요일 찾기 (서머타임 계산용)
@@ -244,6 +245,14 @@ class MaanStockApp {
       const sizeOption = e.target.closest(".size-option");
       if (sizeOption) {
         this.selectTrayTextSize(sizeOption.dataset.size);
+      }
+    });
+
+    // 표시 종목 수 선택 이벤트
+    this.countOptionsEl.addEventListener("click", (e) => {
+      const countOption = e.target.closest(".size-option");
+      if (countOption) {
+        this.selectVisibleStockCount(countOption.dataset.count);
       }
     });
   }
@@ -350,6 +359,7 @@ class MaanStockApp {
       // 색상 및 텍스트 크기 선택 상태 로드
       this.loadTrayColorPreference();
       this.loadTrayTextSizePreference();
+      this.loadVisibleStockCountUI();
 
       // 창 크기 조정
       requestAnimationFrame(() => {
@@ -552,14 +562,13 @@ class MaanStockApp {
     this.stockListEl.innerHTML = "";
 
     // 환영 메시지에서 적용한 스타일 초기화
-    this.stockListEl.style.maxHeight = "";
     this.stockListEl.style.minHeight = "";
     this.stockListEl.style.display = "";
     this.stockListEl.style.alignItems = "";
     this.stockListEl.style.justifyContent = "";
 
-    // 3개 이상일 때만 스크롤 활성화
-    if (filteredStocks.length >= 3) {
+    // 표시 개수를 초과하면 스크롤 활성화
+    if (filteredStocks.length > this.visibleStockCount) {
       this.stockListEl.classList.add("has-scroll");
     } else {
       this.stockListEl.classList.remove("has-scroll");
@@ -571,6 +580,37 @@ class MaanStockApp {
       const stockItemEl = this.createStockItem(stock, originalIndex);
       this.stockListEl.appendChild(stockItemEl);
     });
+
+    // 실제 렌더된 아이템 높이(margin 포함)를 측정해 표시 개수만큼 max-height 설정.
+    // 스타일이 바뀌어도 항상 정확하도록 상수 대신 실측값 사용.
+    this.applyVisibleHeight();
+  }
+
+  applyVisibleHeight() {
+    const items = this.stockListEl.querySelectorAll(".stock-item");
+    // 표시 개수 이하로 종목이 있으면 전부 노출 (max-height 제한 없음)
+    if (items.length === 0 || items.length <= this.visibleStockCount) {
+      this.stockListEl.style.maxHeight = "";
+      return;
+    }
+
+    // max-height 를 N번째 아이템의 하단 경계와 N+1번째 아이템의 상단 사이로 두면
+    // N개는 온전히, N+1개째는 전혀 안 보인다. margin/padding 을 더하면 N+1이 삐져나오므로
+    // "N번째 하단"과 "N+1번째 상단"의 중간값을 써서 여백(gap) 안에서 정확히 자른다.
+    // .stock-list 는 position:relative 라 offsetTop 은 리스트 padding-box 상단 기준.
+    const nth = items[this.visibleStockCount - 1];
+    const next = items[this.visibleStockCount];
+    const nthBottom = nth.offsetTop + nth.offsetHeight; // N번째 하단 경계
+    const nextTop = next.offsetTop; // N+1번째 상단
+    const maxHeight = (nthBottom + nextTop) / 2; // 그 사이 여백에서 자름
+
+    // 측정 실패(레이아웃 미완성) 시 제한 걸지 않음
+    if (!maxHeight) {
+      this.stockListEl.style.maxHeight = "";
+      return;
+    }
+
+    this.stockListEl.style.maxHeight = maxHeight + "px";
   }
 
   createStockItem(stock, index) {
