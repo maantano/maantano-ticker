@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.7.0](https://github.com-maantano/maantano/maantano-ticker/compare/v1.6.0...v1.7.0) (2026-07-13)
+
+
+### ✨ Features
+
+* 표시 종목 수 설정 및 국장/미장 시간외 시세 반영 ([aa3bd58](https://github.com-maantano/maantano/maantano-ticker/commit/aa3bd587a5805180f4f5fabfdac52a821004b21c))
+
 ## [1.6.0](https://github.com-maantano/maantano/maantano-ticker/compare/v1.5.0...v1.6.0) (2026-04-13)
 
 
